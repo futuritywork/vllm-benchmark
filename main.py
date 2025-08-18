@@ -53,30 +53,19 @@ async def main():
 
     # 1) Build ~5k-token prompt
     tokenizer_id = config.tokenizer or config.model
-    # prompt, measured = await build_prompt_of_tokens(
-    #     tokenizer_id,
-    #     config.target_input_tokens,
-    #     config.seed_chunk,
-    #     trust_remote_code=config.trust_remote_code,
-    # )
-    # print(
-    #     f"[prompt] target={config.target_input_tokens} measured={measured} chars={len(prompt)}"
-    # )
-    f = open("conversation.txt", "r")
+
+    f = open("1984.txt", "r")
     prompt = f.read()
 
-    try:
-        tok = AutoTokenizer.from_pretrained(
-            tokenizer_id,
-            trust_remote_code=config.trust_remote_code,
-            use_fast=True,
-        )
-        ids = tok.encode(prompt, add_special_tokens=False)
-        print(
-            f"[prompt] target={config.target_input_tokens} measured={len(ids)} chars={len(prompt)}"
-        )
-    except Exception as e:
-        print(f"[error] {e}")
+    tokenizer = AutoTokenizer.from_pretrained(
+        tokenizer_id,
+        trust_remote_code=config.trust_remote_code,
+        use_fast=True,
+    )
+    ids = tokenizer.encode(prompt, add_special_tokens=False)
+    print(
+        f"[prompt] target={config.target_input_tokens} measured={len(ids)} chars={len(prompt)}"
+    )
 
     # 2) Spin up AsyncLLMEngine
     engine = create_engine(config)
@@ -89,9 +78,8 @@ async def main():
         engine,
         prompt,
         sampling,
+        tokenizer,
         concurrency=1,
-        ttft_timeout=config.ttft_timeout,
-        hold_seconds=5.0,
         log_output=config.log_output,
         log_file=config.log_file,
     )
@@ -105,8 +93,7 @@ async def main():
         start_conc=config.start_concurrency,
         max_conc_cap=config.max_concurrency_cap,
         sla_ok_rate=config.sla_ok_rate,
-        ttft_timeout=config.ttft_timeout,
-        hold_seconds=config.hold_seconds,
+        tokenizer=tokenizer,
         log_output=config.log_output,
         log_file=config.log_file,
     )

@@ -23,8 +23,7 @@ async def stream_once(
     engine: AsyncLLMEngine,
     prompt: str,
     sampling: SamplingParams,
-    ttft_timeout: float,
-    hold_seconds: float,
+    tokenizer,
     log_output: bool = False,
     log_file: str = "llm_outputs.log",
 ) -> dict:
@@ -71,12 +70,6 @@ async def stream_once(
 
         # Count tokens at the end using the tokenizer
         try:
-            from transformers import AutoTokenizer
-
-            tokenizer = AutoTokenizer.from_pretrained(
-                "Qwen/Qwen2-7B-Instruct-AWQ", trust_remote_code=True
-            )
-
             # Count tokens in the generated text only
             if generated_text:
                 tokens_generated = len(
@@ -143,8 +136,7 @@ async def run_level(
     prompt: str,
     sampling: SamplingParams,
     concurrency: int,
-    ttft_timeout: float,
-    hold_seconds: float,
+    tokenizer,
     log_output: bool = False,
     log_file: str = "llm_outputs.log",
 ) -> dict:
@@ -158,8 +150,7 @@ async def run_level(
                 engine,
                 prompt,
                 sampling,
-                ttft_timeout,
-                hold_seconds,
+                tokenizer,
                 log_output,
                 log_file,
             )
@@ -231,8 +222,7 @@ async def find_ceiling(
     start_conc: int,
     max_conc_cap: int,
     sla_ok_rate: float,
-    ttft_timeout: float,
-    hold_seconds: float,
+    tokenizer,
     log_output: bool = False,
     log_file: str = "llm_outputs.log",
 ) -> dict:
@@ -254,8 +244,7 @@ async def find_ceiling(
             prompt,
             sampling,
             conc,
-            ttft_timeout,
-            hold_seconds,
+            tokenizer,
             log_output,
             log_file,
         )
@@ -292,8 +281,7 @@ async def find_ceiling(
             prompt,
             sampling,
             mid,
-            ttft_timeout,
-            hold_seconds,
+            tokenizer,
             log_output,
             log_file,
         )
