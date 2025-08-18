@@ -78,8 +78,8 @@ async def main():
         engine,
         prompt,
         sampling,
-        tokenizer,
         concurrency=1,
+        tokenizer=tokenizer,
         log_output=config.log_output,
         log_file=config.log_file,
     )
