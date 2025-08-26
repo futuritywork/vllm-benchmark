@@ -27,6 +27,7 @@ async def run_single_request(
     gpu_memory_utilization: float = 0.7,
     max_num_seqs: int = 64,
     log_file: str = "single_request.log",
+    gpu_device: Optional[str] = None,
 ) -> dict:
     """
     Run a single LLM request and measure performance.
@@ -34,12 +35,16 @@ async def run_single_request(
     print(f"Loading model: {model}")
 
     # Create engine
-    engine_args = AsyncEngineArgs(
-        model=model,
-        gpu_memory_utilization=gpu_memory_utilization,
-        max_num_seqs=max_num_seqs,
-        trust_remote_code=True,
-    )
+    engine_kwargs = {
+        "model": model,
+        "gpu_memory_utilization": gpu_memory_utilization,
+        "max_num_seqs": max_num_seqs,
+        "trust_remote_code": True,
+    }
+    if gpu_device is not None:
+        engine_kwargs["device"] = gpu_device
+    
+    engine_args = AsyncEngineArgs(**engine_kwargs)
     engine = AsyncLLMEngine.from_engine_args(engine_args)
 
     # Create sampling params
@@ -125,6 +130,8 @@ async def run_single_request(
             f.write(f"Model: {model}\n")
             f.write(f"Max Tokens: {max_new_tokens}\n")
             f.write(f"Prompt Length: {len(prompt)} characters\n")
+            if gpu_device:
+                f.write(f"GPU Device: {gpu_device}\n")
             f.write(f"Generated Text: {generated_text}\n")
             f.write(f"Tokens Generated: {tokens_generated}\n")
             f.write(f"Total Time: {total_time:.3f}s\n")
@@ -170,6 +177,12 @@ async def main():
     parser.add_argument(
         "--log-file", default="single_request.log", help="Output log file"
     )
+    parser.add_argument(
+        "--gpu-device", 
+        type=str, 
+        default=None,
+        help="GPU device to use (e.g., 'cuda:0', 'cuda:1', '0', '1'). If not specified, uses default device."
+    )
 
     args = parser.parse_args()
 
@@ -192,6 +205,7 @@ async def main():
         gpu_memory_utilization=args.gpu_memory_utilization,
         max_num_seqs=args.max_num_seqs,
         log_file=args.log_file,
+        gpu_device=args.gpu_device,
     )
 
     if "error" in result:

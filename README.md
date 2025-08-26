@@ -20,7 +20,8 @@ python3 main.py \
   --target-input-tokens 5000 \
   --ttft-timeout 60 \
   --hold-seconds 5 \
-  --sla-ok-rate 0.99
+  --sla-ok-rate 0.99 \
+  --gpu-device cuda:0
 ```
 
 ## Key Features
@@ -29,6 +30,7 @@ python3 main.py \
 - **Concurrency Ceiling Detection**: Uses exponential ramp + binary search to find maximum sustainable concurrency
 - **SLA Compliance**: Ensures success rate and time-to-first-token (TTFT) thresholds are met
 - **Flexible Prompt Building**: Supports both tokenizer-based and character-based prompt construction
+- **GPU Selection**: Choose which GPU device to use for inference
 
 ## Common Engine Arguments
 
@@ -37,6 +39,7 @@ python3 main.py \
 - `--gpu-memory-utilization 0.9`
 - `--max-model-len 8192`
 - `--max-num-seqs 2048`
+- `--gpu-device cuda:0|cuda:1|0|1`
 
 ## Output
 

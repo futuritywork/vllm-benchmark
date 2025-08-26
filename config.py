@@ -37,6 +37,7 @@ class BenchmarkConfig:
     max_num_batched_tokens: Optional[int]
     swap_space: int
     enforce_eager: bool
+    gpu_device: Optional[str]
 
 
 def parse_args() -> BenchmarkConfig:
@@ -94,6 +95,12 @@ def parse_args() -> BenchmarkConfig:
     p.add_argument(
         "--enforce-eager", action="store_true", help="Disable CUDA graph capture if set"
     )
+    p.add_argument(
+        "--gpu-device", 
+        type=str, 
+        default=None,
+        help="GPU device to use (e.g., 'cuda:0', 'cuda:1', '0', '1'). If not specified, uses default device."
+    )
 
     args = p.parse_args()
 
@@ -120,4 +127,5 @@ def parse_args() -> BenchmarkConfig:
         max_num_batched_tokens=args.max_num_batched_tokens,
         swap_space=args.swap_space,
         enforce_eager=args.enforce_eager,
+        gpu_device=args.gpu_device,
     )

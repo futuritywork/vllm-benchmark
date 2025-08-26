@@ -26,7 +26,8 @@ python3 main.py \
   --target-input-tokens 5000 \
   --ttft-timeout 60 \
   --hold-seconds 5 \
-  --sla-ok-rate 0.99
+  --sla-ok-rate 0.99 \
+  --gpu-device cuda:0
 
 Common engine args (mirrors CLI):
   --dtype auto|float16|bfloat16
@@ -34,6 +35,7 @@ Common engine args (mirrors CLI):
   --gpu-memory-utilization 0.9
   --max-model-len 8192
   --max-num-seqs 2048
+  --gpu-device cuda:0|cuda:1|0|1
 """
 
 import asyncio
@@ -110,6 +112,8 @@ async def main():
     print(f"⚡ Performance Threshold: ≥ 25 tokens/second")
     print(f"🕐 Timeout: ≤ {config.ttft_timeout}s")
     print(f"🔢 Max Tokens per Request: {config.max_new_tokens}")
+    if config.gpu_device:
+        print(f"🖥️  GPU Device: {config.gpu_device}")
 
     if history:
         print(f"\n📈 Performance Summary:")
