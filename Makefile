@@ -18,6 +18,10 @@ help:
 	@echo "  qwen30-parallel        - Run Qwen3-30B on all GPUs in parallel"
 	@echo "  qwen30-fp8-parallel    - Run Qwen3-30B-FP8 on all GPUs in parallel"
 	@echo ""
+	@echo "Results analysis:"
+	@echo "  list-timestamps       - List available parallel benchmark timestamps"
+	@echo "  aggregate-results     - Aggregate results for a specific timestamp"
+	@echo ""
 	@echo "Utility targets:"
 	@echo "  detect-gpus       - Detect available GPUs"
 	@echo "  gpu-info          - Show detailed GPU information"
@@ -86,6 +90,20 @@ qwen30-parallel:
 # Run Qwen 3.0-FP8 on all available GPUs in parallel (simultaneous execution)
 qwen30-fp8-parallel:
 	python run_parallel_gpu_benchmarks.py --model Qwen/Qwen3-30B-A3B-FP8
+
+# List available timestamps from parallel benchmark runs
+list-timestamps:
+	python list_available_timestamps.py
+
+# Aggregate results for a specific timestamp
+aggregate-results:
+	@if [ -z "$(TIMESTAMP)" ]; then \
+		echo "❌ Error: TIMESTAMP parameter is required"; \
+		echo "Usage: make aggregate-results TIMESTAMP=20241201_143022"; \
+		echo "Use 'make list-timestamps' to see available timestamps"; \
+		exit 1; \
+	fi
+	python aggregate_parallel_results.py $(TIMESTAMP)
 
 # Detect available GPUs
 detect-gpus:
