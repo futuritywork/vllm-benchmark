@@ -14,6 +14,10 @@ help:
 	@echo "  qwen30-fp8-all-gpus      - Run Qwen3-30B-FP8 on all GPUs (interactive)"
 	@echo "  qwen30-fp8-all-gpus-auto - Run Qwen3-30B-FP8 on all GPUs (automated)"
 	@echo ""
+	@echo "Parallel benchmarks (runs on all GPUs simultaneously):"
+	@echo "  qwen30-parallel        - Run Qwen3-30B on all GPUs in parallel"
+	@echo "  qwen30-fp8-parallel    - Run Qwen3-30B-FP8 on all GPUs in parallel"
+	@echo ""
 	@echo "Utility targets:"
 	@echo "  detect-gpus       - Detect available GPUs"
 	@echo "  gpu-info          - Show detailed GPU information"
@@ -74,6 +78,14 @@ qwen30-fp8-all-gpus:
 # Run Qwen 3.0-FP8 on all available GPUs (non-interactive, no confirmation prompt)
 qwen30-fp8-all-gpus-auto:
 	python run_on_all_gpus_auto.py --model Qwen/Qwen3-30B-A3B-FP8
+
+# Run Qwen 3.0 on all available GPUs in parallel (simultaneous execution)
+qwen30-parallel:
+	python run_parallel_gpu_benchmarks.py --model Qwen/Qwen3-30B-A3B
+
+# Run Qwen 3.0-FP8 on all available GPUs in parallel (simultaneous execution)
+qwen30-fp8-parallel:
+	python run_parallel_gpu_benchmarks.py --model Qwen/Qwen3-30B-A3B-FP8
 
 # Detect available GPUs
 detect-gpus:
