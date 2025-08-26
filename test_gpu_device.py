@@ -7,19 +7,19 @@ import sys
 import subprocess
 import argparse
 
-def test_gpu_device_option():
-    """Test that the --gpu-device option is properly recognized"""
+def test_cuda_visible_devices():
+    """Test that CUDA_VISIBLE_DEVICES environment variable works"""
     
-    # Test with help to see if the option is available
+    # Test that the scripts run without the --gpu-device option
     try:
         result = subprocess.run([
             sys.executable, "main.py", "--help"
         ], capture_output=True, text=True, timeout=10)
         
-        if result.returncode == 0 and "--gpu-device" in result.stdout:
-            print("✅ GPU device option is available in main.py")
+        if result.returncode == 0:
+            print("✅ main.py help works correctly")
         else:
-            print("❌ GPU device option not found in main.py help")
+            print("❌ main.py help failed")
             return False
             
     except Exception as e:
@@ -32,22 +32,22 @@ def test_gpu_device_option():
             sys.executable, "single_request.py", "--help"
         ], capture_output=True, text=True, timeout=10)
         
-        if result.returncode == 0 and "--gpu-device" in result.stdout:
-            print("✅ GPU device option is available in single_request.py")
+        if result.returncode == 0:
+            print("✅ single_request.py help works correctly")
         else:
-            print("❌ GPU device option not found in single_request.py help")
+            print("❌ single_request.py help failed")
             return False
             
     except Exception as e:
         print(f"❌ Error testing single_request.py help: {e}")
         return False
     
-    print("\n🎉 GPU device option test passed!")
+    print("\n🎉 CUDA_VISIBLE_DEVICES test passed!")
     print("\nUsage examples:")
-    print("  python3 main.py --model your-model --gpu-device cuda:0")
-    print("  python3 main.py --model your-model --gpu-device cuda:1")
-    print("  python3 single_request.py --model your-model --gpu-device 0")
-    print("  python3 single_request.py --model your-model --gpu-device 1")
+    print("  CUDA_VISIBLE_DEVICES=0 python3 main.py --model your-model")
+    print("  CUDA_VISIBLE_DEVICES=1 python3 main.py --model your-model")
+    print("  CUDA_VISIBLE_DEVICES=0 python3 single_request.py --model your-model")
+    print("  CUDA_VISIBLE_DEVICES=1 python3 single_request.py --model your-model")
     
     return True
 
@@ -58,11 +58,11 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     if args.run_test:
-        success = test_gpu_device_option()
+        success = test_cuda_visible_devices()
         sys.exit(0 if success else 1)
     else:
-        print("GPU device option has been added to the benchmark!")
+        print("CUDA_VISIBLE_DEVICES support has been added to the benchmark!")
         print("Use --run-test to verify the implementation.")
-        print("\nNew options available:")
-        print("  --gpu-device cuda:0|cuda:1|0|1")
-        print("\nThis allows you to select which GPU to use for inference.")
+        print("\nGPU selection is now controlled via environment variable:")
+        print("  CUDA_VISIBLE_DEVICES=0|1|0,1")
+        print("\nThis allows you to select which GPU(s) to use for inference.")

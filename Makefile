@@ -5,12 +5,14 @@ help:
 	@echo "Single GPU benchmarks:"
 	@echo "  kimi              - Run Kimi-K2-Instruct benchmark (tensor parallel size 8)"
 	@echo "  qwen235           - Run Qwen3-235B benchmark (tensor parallel size 8)"
-	@echo "  qwen30            - Run Qwen3-30B benchmark (tensor parallel size 8)"
 	@echo "  qwen30-single     - Run Qwen3-30B benchmark (tensor parallel size 1)"
+	@echo "  qwen30-fp8-single - Run Qwen3-30B-FP8 benchmark (tensor parallel size 1)"
 	@echo ""
 	@echo "Multi-GPU benchmarks:"
 	@echo "  qwen30-all-gpus      - Run Qwen3-30B on all GPUs (interactive)"
 	@echo "  qwen30-all-gpus-auto - Run Qwen3-30B on all GPUs (automated)"
+	@echo "  qwen30-fp8-all-gpus      - Run Qwen3-30B-FP8 on all GPUs (interactive)"
+	@echo "  qwen30-fp8-all-gpus-auto - Run Qwen3-30B-FP8 on all GPUs (automated)"
 	@echo ""
 	@echo "Utility targets:"
 	@echo "  detect-gpus       - Detect available GPUs"
@@ -37,19 +39,19 @@ qwen235:
 		--max-new-tokens 500 \
 		--trust-remote-code
 
-qwen30:
+qwen30-single:
 	python main.py \
 		--model Qwen/Qwen3-30B-A3B \
 		--max-concurrency-cap 1024 \
 		--start-concurrency 2 \
 		--log-output \
-		--tensor-parallel-size 8 \
+		--tensor-parallel-size 1 \
 		--max-new-tokens 500 \
 		--trust-remote-code
 
-qwen30-single:
+qwen30-fp8-single:
 	python main.py \
-		--model Qwen/Qwen3-30B-A3B \
+		--model Qwen/Qwen3-30B-A3B-FP8 \
 		--max-concurrency-cap 1024 \
 		--start-concurrency 2 \
 		--log-output \
@@ -64,6 +66,14 @@ qwen30-all-gpus:
 # Run Qwen 3.0 on all available GPUs (non-interactive, no confirmation prompt)
 qwen30-all-gpus-auto:
 	python run_on_all_gpus_auto.py
+
+# Run Qwen 3.0-FP8 on all available GPUs with tensor parallel size of 1
+qwen30-fp8-all-gpus:
+	python run_on_all_gpus.py --model Qwen/Qwen3-30B-A3B-FP8
+
+# Run Qwen 3.0-FP8 on all available GPUs (non-interactive, no confirmation prompt)
+qwen30-fp8-all-gpus-auto:
+	python run_on_all_gpus_auto.py --model Qwen/Qwen3-30B-A3B-FP8
 
 # Detect available GPUs
 detect-gpus:

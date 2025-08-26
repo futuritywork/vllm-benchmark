@@ -4,12 +4,15 @@ Automated script to run Qwen 3.0 benchmark on all available GPUs with tensor par
 No user interaction required.
 """
 
-import subprocess
-import sys
+import asyncio
+import json
 import os
+import sys
+import subprocess
 import time
 from datetime import datetime
 from detect_gpus import get_available_gpus
+import argparse
 
 def run_benchmark_on_gpu(gpu_id, model="Qwen/Qwen3-30B-A3B"):
     """Run benchmark on a specific GPU"""
@@ -19,11 +22,10 @@ def run_benchmark_on_gpu(gpu_id, model="Qwen/Qwen3-30B-A3B"):
     output_dir = f"results_gpu_{gpu_id}_{timestamp}"
     os.makedirs(output_dir, exist_ok=True)
     
-    # Build command
+    # Build command (without --gpu-device, will use CUDA_VISIBLE_DEVICES)
     cmd = [
         sys.executable, "main.py",
         "--model", model,
-        "--gpu-device", f"cuda:{gpu_id}",
         "--tensor-parallel-size", "1",
         "--max-concurrency-cap", "1024",
         "--start-concurrency", "2",
@@ -37,10 +39,13 @@ def run_benchmark_on_gpu(gpu_id, model="Qwen/Qwen3-30B-A3B"):
     print(f"\n🚀 Starting benchmark on GPU {gpu_id}")
     print(f"📁 Output directory: {output_dir}")
     
-    # Run the benchmark
+    # Run the benchmark with CUDA_VISIBLE_DEVICES set
     start_time = time.time()
     try:
-        result = subprocess.run(cmd, check=True, capture_output=False)
+        env = os.environ.copy()
+        env['CUDA_VISIBLE_DEVICES'] = str(gpu_id)
+        
+        result = subprocess.run(cmd, check=True, capture_output=False, env=env)
         end_time = time.time()
         duration = end_time - start_time
         
@@ -59,6 +64,16 @@ def run_benchmark_on_gpu(gpu_id, model="Qwen/Qwen3-30B-A3B"):
 def main():
     """Main function to run benchmarks on all GPUs"""
     
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description="Run benchmark on all available GPUs (automated)")
+    parser.add_argument(
+        "--model", 
+        default="Qwen/Qwen3-30B-A3B",
+        help="Model to benchmark (default: Qwen/Qwen3-30B-A3B)"
+    )
+    
+    args = parser.parse_args()
+    
     print("🔍 Detecting available GPUs...")
     gpus = get_available_gpus()
     
@@ -67,6 +82,7 @@ def main():
         return 1
     
     print(f"✅ Found {len(gpus)} GPU(s): {', '.join(map(str, gpus))}")
+    print(f"🤖 Model: {args.model}")
     print(f"🚀 Starting automated benchmark run on all GPUs...")
     
     # Run benchmarks on each GPU
@@ -74,7 +90,7 @@ def main():
     total_start_time = time.time()
     
     for gpu_id in gpus:
-        success, output_dir, duration = run_benchmark_on_gpu(gpu_id)
+        success, output_dir, duration = run_benchmark_on_gpu(gpu_id, args.model)
         results.append({
             'gpu_id': gpu_id,
             'success': success,
@@ -98,6 +114,7 @@ def main():
     failed = len(results) - successful
     
     print(f"🎯 Total GPUs: {len(gpus)}")
+    print(f"🤖 Model: {args.model}")
     print(f"✅ Successful: {successful}")
     print(f"❌ Failed: {failed}")
     print(f"⏱️  Total time: {total_duration:.2f} seconds")

@@ -20,8 +20,7 @@ python3 main.py \
   --target-input-tokens 5000 \
   --ttft-timeout 60 \
   --hold-seconds 5 \
-  --sla-ok-rate 0.99 \
-  --gpu-device cuda:0
+  --sla-ok-rate 0.99
 ```
 
 ## Key Features
@@ -30,7 +29,7 @@ python3 main.py \
 - **Concurrency Ceiling Detection**: Uses exponential ramp + binary search to find maximum sustainable concurrency
 - **SLA Compliance**: Ensures success rate and time-to-first-token (TTFT) thresholds are met
 - **Flexible Prompt Building**: Supports both tokenizer-based and character-based prompt construction
-- **GPU Selection**: Choose which GPU device to use for inference
+- **GPU Selection**: Choose which GPU device to use via CUDA_VISIBLE_DEVICES environment variable
 
 ## Common Engine Arguments
 
@@ -39,7 +38,21 @@ python3 main.py \
 - `--gpu-memory-utilization 0.9`
 - `--max-model-len 8192`
 - `--max-num-seqs 2048`
-- `--gpu-device cuda:0|cuda:1|0|1`
+
+## GPU Selection
+
+GPU selection is controlled via the `CUDA_VISIBLE_DEVICES` environment variable:
+
+```bash
+# Use first GPU
+CUDA_VISIBLE_DEVICES=0 python3 main.py --model your-model
+
+# Use second GPU
+CUDA_VISIBLE_DEVICES=1 python3 main.py --model your-model
+
+# Use multiple GPUs (for tensor parallelism)
+CUDA_VISIBLE_DEVICES=0,1 python3 main.py --model your-model --tensor-parallel-size 2
+```
 
 ## Output
 

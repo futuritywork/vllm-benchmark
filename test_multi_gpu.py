@@ -66,6 +66,7 @@ def main():
         print("  make detect-gpus             # Detect available GPUs")
         print("  make qwen30-all-gpus         # Run Qwen 3.0 on all GPUs (interactive)")
         print("  make qwen30-all-gpus-auto    # Run Qwen 3.0 on all GPUs (automated)")
+        print("\nNote: GPU selection is now controlled via CUDA_VISIBLE_DEVICES")
     else:
         print("❌ Multi-GPU functionality has issues!")
         print("Please check the GPU detection script.")

@@ -28,8 +28,6 @@ def create_engine(config: BenchmarkConfig) -> AsyncLLMEngine:
         engine_kwargs["max_num_seqs"] = config.max_num_seqs
     if config.max_num_batched_tokens is not None:
         engine_kwargs["max_num_batched_tokens"] = config.max_num_batched_tokens
-    if config.gpu_device is not None:
-        engine_kwargs["device"] = config.gpu_device
 
     engine_args = AsyncEngineArgs(**engine_kwargs)
     return AsyncLLMEngine.from_engine_args(engine_args)
