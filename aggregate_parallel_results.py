@@ -17,22 +17,32 @@ import glob
 def find_gpu_result_dirs(timestamp):
     """Find all GPU result directories for a specific timestamp"""
     
-    # Look for directories matching the pattern results_gpu_*_timestamp
-    pattern = f"results_gpu_*_{timestamp}"
-    matching_dirs = glob.glob(pattern)
+    # Look for the base directory: results_timestamp/
+    base_dir = f"results_{timestamp}"
     
-    if not matching_dirs:
-        print(f"❌ No GPU result directories found for timestamp: {timestamp}")
+    if not os.path.exists(base_dir):
+        print(f"❌ Base directory not found: {base_dir}")
+        return []
+    
+    # Look for GPU subdirectories: results_timestamp/gpu_0/, gpu_1/, etc.
+    gpu_dirs = []
+    for item in os.listdir(base_dir):
+        item_path = os.path.join(base_dir, item)
+        if os.path.isdir(item_path) and item.startswith('gpu_'):
+            gpu_dirs.append(item_path)
+    
+    if not gpu_dirs:
+        print(f"❌ No GPU result directories found in {base_dir}")
         return []
     
     # Sort by GPU ID for consistent ordering
-    matching_dirs.sort(key=lambda x: int(x.split('_')[2]))
+    gpu_dirs.sort(key=lambda x: int(x.split('_')[-1]))
     
-    print(f"✅ Found {len(matching_dirs)} GPU result directories:")
-    for dir_path in matching_dirs:
+    print(f"✅ Found {len(gpu_dirs)} GPU result directories in {base_dir}:")
+    for dir_path in gpu_dirs:
         print(f"   {dir_path}")
     
-    return matching_dirs
+    return gpu_dirs
 
 def load_gpu_results(gpu_dirs):
     """Load results from all GPU directories"""
@@ -40,7 +50,8 @@ def load_gpu_results(gpu_dirs):
     all_results = []
     
     for dir_path in gpu_dirs:
-        gpu_id = dir_path.split('_')[2]  # Extract GPU ID from directory name
+        # Extract GPU ID from directory name (e.g., "gpu_0" -> "0")
+        gpu_id = dir_path.split('_')[-1]  # Get the last part after splitting by '_'
         
         # Look for the engine_conn_results.json file
         json_file = os.path.join(dir_path, 'engine_conn_results.json')
@@ -329,7 +340,9 @@ def main():
         if args.output:
             output_file = args.output
         else:
-            output_file = f"aggregated_results_{args.timestamp}.json"
+            # Save in the base directory
+            base_dir = f"results_{args.timestamp}"
+            output_file = os.path.join(base_dir, "aggregated_results.json")
         
         try:
             with open(output_file, 'w') as f:
