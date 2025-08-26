@@ -47,6 +47,16 @@ qwen235:
 		--max-new-tokens 500 \
 		--trust-remote-code
 
+qwen30-8:
+	python main.py \
+		--model Qwen/Qwen3-30B-A3B \
+		--max-concurrency-cap 1024 \
+		--start-concurrency 2 \
+		--log-output \
+		--tensor-parallel-size 8 \
+		--max-new-tokens 500 \
+		--trust-remote-code
+
 qwen30-single:
 	python main.py \
 		--model Qwen/Qwen3-30B-A3B \
