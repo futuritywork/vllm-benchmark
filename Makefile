@@ -2,6 +2,10 @@
 help:
 	@echo "Available targets:"
 	@echo ""
+	@echo "Model downloads:"
+	@echo "  download-qwen-models - Download Qwen3-30B-A3B and Qwen3-30B-A3B-FP8 to cache"
+	@echo "  download-model       - Download a specific model to cache"
+	@echo ""
 	@echo "Single GPU benchmarks:"
 	@echo "  kimi              - Run Kimi-K2-Instruct benchmark (tensor parallel size 8)"
 	@echo "  qwen235           - Run Qwen3-235B benchmark (tensor parallel size 8)"
@@ -27,55 +31,52 @@ help:
 	@echo "  gpu-info          - Show detailed GPU information"
 	@echo "  help              - Show this help message"
 
-kimi:
+# Define function: isnum
+# Usage: $(call isnum,<value>)
+# Returns: <value> if numeric, -1 otherwise
+define isnum
+$(if $(filter-out 0 1 2 3 4 5 6 7 8 9,$(firstword $(subst , ,$1))),-1,$1)
+endef
+
+
+main:
 	python main.py \
-		--model moonshotai/Kimi-K2-Instruct \
+		--model $1 \
 		--max-concurrency-cap 1024 \
 		--start-concurrency 2 \
 		--log-output \
-		--tensor-parallel-size 8 \
+		--tensor-parallel-size $2 \
 		--max-new-tokens 500 \
 		--trust-remote-code
+
+# Define function: set_tpar
+# Usage: $(call set_tpar,<value>)
+# Returns: 8 if value is empty, otherwise validates and returns value
+define set_tpar
+$(if $1,$(call isnum,$1),8)
+endef
+
+kimi:
+	$(eval TPAR := $(call set_tpar,$(P)))
+	make main moonshotai/Kimi-K2-Instruct $(TPAR)
 
 qwen235:
-	python main.py \
-		--model Qwen/Qwen3-235B-A22B \
-		--max-concurrency-cap 1024 \
-		--start-concurrency 2 \
-		--log-output \
-		--tensor-parallel-size 8 \
-		--max-new-tokens 500 \
-		--trust-remote-code
+	$(eval TPAR := $(call set_tpar,$(P)))
+	make main Qwen/Qwen3-235B-A22B $(TPAR)
 
-qwen30-8:
-	python main.py \
-		--model Qwen/Qwen3-30B-A3B \
-		--max-concurrency-cap 1024 \
-		--start-concurrency 2 \
-		--log-output \
-		--tensor-parallel-size 8 \
-		--max-new-tokens 500 \
-		--trust-remote-code
+qwen30:
+	$(eval TPAR := $(call set_tpar,$(P)))
+	make main Qwen/Qwen3-30B-A3B $(TPAR)
 
 qwen30-single:
-	python main.py \
-		--model Qwen/Qwen3-30B-A3B \
-		--max-concurrency-cap 1024 \
-		--start-concurrency 2 \
-		--log-output \
-		--tensor-parallel-size 1 \
-		--max-new-tokens 500 \
-		--trust-remote-code
+	make qwen30 P=1
+
+qwen30-fp8:
+	$(eval TPAR := $(call set_tpar,$(P)))
+	make main Qwen/Qwen3-30B-A3B-FP8 $(TPAR)
 
 qwen30-fp8-single:
-	python main.py \
-		--model Qwen/Qwen3-30B-A3B-FP8 \
-		--max-concurrency-cap 1024 \
-		--start-concurrency 2 \
-		--log-output \
-		--tensor-parallel-size 1 \
-		--max-new-tokens 500 \
-		--trust-remote-code
+	make qwen30-fp8 P=1
 
 # Run Qwen 3.0 on all available GPUs with tensor parallel size of 1
 qwen30-all-gpus:
@@ -126,3 +127,20 @@ gpu-info:
 	@echo ""
 	@echo "GPU Details:"
 	@nvidia-smi --list-gpus 2>/dev/null || echo "nvidia-smi not available"
+
+# Download a specific model to disk
+download:
+	@if [ -z "$(MODEL)" ]; then \
+		echo "❌ Error: MODEL parameter is required"; \
+		echo "Usage: make download MODEL=Qwen/Qwen3-30B-A3B"; \
+		echo "Example: make download MODEL=Qwen/Qwen3-30B-A3B-FP8"; \
+		exit 1; \
+	fi
+	@echo "🚀 Downloading model: $(MODEL)"
+	python download_models.py $(MODEL)
+
+# Download Qwen models to disk
+download-qwen:
+	@echo "🚀 Downloading Qwen models to disk..."
+	make download MODEL=Qwen/Qwen3-30B-A3B
+	make download MODEL=Qwen/Qwen3-30B-A3B-FP8

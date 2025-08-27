@@ -11,6 +11,8 @@ The project has been refactored into multiple modules for better organization:
 - **`prompt_builder.py`** - Utilities for constructing prompts of target token length
 - **`engine_manager.py`** - Engine initialization and sampling parameter creation
 - **`benchmark.py`** - Core benchmarking functions (streaming, concurrency testing, ceiling finding)
+- **`download_models.py`** - Utility to download models from Hugging Face to default cache
+- **`download_qwen_models.py`** - Batch download script for Qwen models
 
 ## Usage
 
@@ -22,6 +24,32 @@ python3 main.py \
   --hold-seconds 5 \
   --sla-ok-rate 0.99
 ```
+
+## Model Downloads
+
+The project includes utilities to download models from Hugging Face to the default cache location:
+
+### Download Qwen Models
+
+```bash
+# Download both Qwen3-30B-A3B and Qwen3-30B-A3B-FP8 models
+make download-qwen-models
+
+# Download a specific model
+make download-model MODEL=Qwen/Qwen3-30B-A3B
+```
+
+### Using Downloaded Models
+
+Once downloaded, you can use the models with their original Hugging Face names:
+
+```bash
+# Use downloaded models with their original names
+python main.py --model Qwen/Qwen3-30B-A3B
+python main.py --model Qwen/Qwen3-30B-A3B-FP8
+```
+
+The models are stored in the default Hugging Face cache location and will be automatically found when referenced by their original model names.
 
 ## Key Features
 
