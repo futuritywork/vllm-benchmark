@@ -6,9 +6,7 @@ Downloads models from Hugging Face to local disk for offline use.
 """
 
 import argparse
-import os
 import sys
-from pathlib import Path
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
 

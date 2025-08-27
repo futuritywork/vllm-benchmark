@@ -38,14 +38,16 @@ define isnum
 $(if $(filter-out 0 1 2 3 4 5 6 7 8 9,$(firstword $(subst , ,$1))),-1,$1)
 endef
 
+setup:
+	./setup.sh
 
 main:
 	python main.py \
-		--model $1 \
+		--model $(MODEL) \
 		--max-concurrency-cap 1024 \
 		--start-concurrency 2 \
 		--log-output \
-		--tensor-parallel-size $2 \
+		--tensor-parallel-size $(TPAR) \
 		--max-new-tokens 500 \
 		--trust-remote-code
 
@@ -58,22 +60,22 @@ endef
 
 kimi:
 	$(eval TPAR := $(call set_tpar,$(P)))
-	make main moonshotai/Kimi-K2-Instruct $(TPAR)
+	make main MODEL=moonshotai/Kimi-K2-Instruct TPAR=$(TPAR)
 
 qwen235:
 	$(eval TPAR := $(call set_tpar,$(P)))
-	make main Qwen/Qwen3-235B-A22B $(TPAR)
+	make main MODEL=Qwen/Qwen3-235B-A22B TPAR=$(TPAR)
 
 qwen30:
 	$(eval TPAR := $(call set_tpar,$(P)))
-	make main Qwen/Qwen3-30B-A3B $(TPAR)
+	make main MODEL=Qwen/Qwen3-30B-A3B TPAR=$(TPAR)
 
 qwen30-single:
 	make qwen30 P=1
 
 qwen30-fp8:
 	$(eval TPAR := $(call set_tpar,$(P)))
-	make main Qwen/Qwen3-30B-A3B-FP8 $(TPAR)
+	make main MODEL=Qwen/Qwen3-30B-A3B-FP8 TPAR=$(TPAR)
 
 qwen30-fp8-single:
 	make qwen30-fp8 P=1
