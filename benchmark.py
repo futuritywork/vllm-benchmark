@@ -151,6 +151,16 @@ class LevelResult:
     tokens_per_second_p95: float
     avg_tokens_generated: float
 
+    def to_dict(self):
+        return {
+            "concurrency": self.concurrency,
+            "ok_rate": self.ok_rate,
+            "avg_tokens_per_second": self.avg_tokens_per_second,
+            "tokens_per_second_p50": self.tokens_per_second_p50,
+            "tokens_per_second_p95": self.tokens_per_second_p95,
+            "avg_tokens_generated": self.avg_tokens_generated,
+        }
+
 async def run_level(
     engine: AsyncLLMEngine,
     prompt: str,
@@ -225,6 +235,12 @@ async def run_level(
 class CeilingResult:
     max_sustainable: int
     history: List[LevelResult]
+
+    def to_dict(self):
+        return {
+            "max_sustainable": self.max_sustainable,
+            "history": [r.to_dict() for r in self.history],
+        }
 
 async def find_ceiling(
     engine: AsyncLLMEngine,

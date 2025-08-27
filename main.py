@@ -105,7 +105,7 @@ async def main():
     print("🎯 BENCHMARK RESULTS")
     print("=" * 60)
 
-    max_sustainable = result["max_sustainable"]
+    max_sustainable = result.max_sustainable
     history = result.get("history", [])
 
     print(f"📊 Max Sustainable Concurrency: {max_sustainable}")
@@ -145,7 +145,7 @@ async def main():
 
     # Save detailed results to JSON
     with open(config.json_out, "w") as f:
-        json.dump(result, f, indent=2)
+        json.dump(result.to_dict(), f, indent=2)
 
 
 if __name__ == "__main__":
