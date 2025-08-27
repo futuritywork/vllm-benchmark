@@ -302,12 +302,12 @@ async def find_ceiling(
         )
         history.append(res)
         print(f"[search] {res}")
-        if res["ok_rate"] >= sla_ok_rate:
-            print(f"✅ Concurrency {mid} passed (success rate: {res['ok_rate']:.1%})")
+        if res.ok_rate >= sla_ok_rate:
+            print(f"✅ Concurrency {mid} passed (success rate: {res.ok_rate:.1%})")
             last_pass = mid
             lo = mid + 1
         else:
-            print(f"❌ Concurrency {mid} failed (success rate: {res['ok_rate']:.1%})")
+            print(f"❌ Concurrency {mid} failed (success rate: {res.ok_rate:.1%})")
             hi = mid - 1
 
     print(f"\n🎯 Binary search complete! Max sustainable concurrency: {last_pass}")
