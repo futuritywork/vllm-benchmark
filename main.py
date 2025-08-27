@@ -106,7 +106,7 @@ async def main():
     print("=" * 60)
 
     max_sustainable = result.max_sustainable
-    history = result.get("history", [])
+    history = result.history
 
     print(f"📊 Max Sustainable Concurrency: {max_sustainable}")
     print(f"🎯 Success Rate Threshold: ≥ {config.sla_ok_rate:.1%}")
@@ -126,11 +126,11 @@ async def main():
         print("-" * 60)
 
         for res in history:
-            conc = res.get("concurrency", 0)
-            ok_rate = res.get("ok_rate", 0)
-            avg_tps = res.get("avg_tokens_per_second", 0)
-            p50_tps = res.get("tokens_per_second_p50", 0)
-            p95_tps = res.get("tokens_per_second_p95", 0)
+            conc = res.concurrency
+            ok_rate = res.ok_rate
+            avg_tps = res.avg_tokens_per_second
+            p50_tps = res.tokens_per_second_p50
+            p95_tps = res.tokens_per_second_p95
 
             status = "✅" if ok_rate >= config.sla_ok_rate else "❌"
             print(
