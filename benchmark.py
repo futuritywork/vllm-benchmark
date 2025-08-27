@@ -261,7 +261,7 @@ async def find_ceiling(
             min_tps=MIN_TPS,
         )
         history.append(res)
-        print(f"[ramp] {json.dumps(res)}")
+        print(f"[ramp] {res}")
 
         if res.ok_rate >= sla_ok_rate:
             print(f"✅ Concurrency {conc} passed (success rate: {res.ok_rate:.1%})")
@@ -301,7 +301,7 @@ async def find_ceiling(
             log_file,
         )
         history.append(res)
-        print(f"[search] {json.dumps(res)}")
+        print(f"[search] {res}")
         if res["ok_rate"] >= sla_ok_rate:
             print(f"✅ Concurrency {mid} passed (success rate: {res['ok_rate']:.1%})")
             last_pass = mid

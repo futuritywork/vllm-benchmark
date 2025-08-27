@@ -4,7 +4,7 @@ python3 -m venv .venv
 
 source .venv/bin/activate
 
-pip install -r pyproject.toml
+pip install vllm accelerate
 
 apt update
 apt install neovim btop

@@ -86,7 +86,7 @@ async def main():
         log_output=config.log_output,
         log_file=config.log_file,
     )
-    print(f"[warmup] {json.dumps(warm)}")
+    print(f"[warmup] {warm}")
 
     # 5) Ramp + binary search to find ceiling
     result = await find_ceiling(
