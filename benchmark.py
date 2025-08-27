@@ -4,6 +4,7 @@ Core benchmarking functions for vLLM Engine-Direct Connection Ceiling Benchmark
 """
 
 import asyncio
+from dataclasses import dataclass
 import json
 import statistics
 import time
@@ -13,11 +14,22 @@ from typing import List, Optional
 from vllm.engine.async_llm_engine import AsyncLLMEngine
 from vllm import SamplingParams
 
+MIN_TPS = 25
+
 
 def now() -> float:
     """Get current time in seconds"""
     return time.perf_counter()
 
+@dataclass
+class StreamResult:
+    ok: bool
+    error: Optional[str]
+    generated_text: str
+    tokens_generated: int
+    tps: float
+    total_time: float
+    tps_threshold: bool
 
 async def stream_once(
     engine: AsyncLLMEngine,
@@ -26,20 +38,19 @@ async def stream_once(
     tokenizer,
     log_output: bool = False,
     log_file: str = "llm_outputs.log",
-) -> dict:
+    min_tps: float = MIN_TPS,
+) -> StreamResult:
     """
     Start one streamed generation; capture TTFT from the first yielded chunk.
     Keep it alive for `hold_seconds`, then abort to free scheduler/compute.
     """
     rid = str(uuid.uuid4())
-    t0 = now()
-    first_seen: Optional[float] = None
     ok = False
     error = None
     generated_text = ""
     tokens_generated = 0
-    generation_start_time = None
-    generation_end_time = None
+    time_0 = now()
+    time_f = None
 
     try:
         # Let the engine run to completion and collect all outputs
@@ -66,7 +77,7 @@ async def stream_once(
                     print(f"Finish reason: {output.finish_reason}")
 
         # Record end time
-        generation_end_time = now()
+        time_f = now()
 
         # Count tokens at the end using the tokenizer
         try:
@@ -99,7 +110,7 @@ async def stream_once(
             pass
 
     # Calculate tokens per second
-    total_time = generation_end_time - t0
+    total_time = time_f - time_0
     tokens_per_second = None
 
     if tokens_generated > 0:
@@ -121,15 +132,24 @@ async def stream_once(
         except Exception as e:
             print(f"Warning: Failed to log output: {e}")
 
-    return {
-        "ok": ok and error is None,
-        "total_time": total_time,
-        "error": error,
-        "generated_text": generated_text,
-        "tokens_generated": tokens_generated,
-        "tokens_per_second": tokens_per_second,
-    }
+    return StreamResult(
+        ok=ok and error is None,
+        error=error,
+        generated_text=generated_text,
+        tokens_generated=tokens_generated,
+        tps=tokens_per_second,
+        total_time=total_time,
+        tps_threshold=tokens_per_second >= min_tps,
+    )
 
+@dataclass
+class LevelResult:
+    concurrency: int
+    ok_rate: float
+    avg_tokens_per_second: float
+    tokens_per_second_p50: float
+    tokens_per_second_p95: float
+    avg_tokens_generated: float
 
 async def run_level(
     engine: AsyncLLMEngine,
@@ -139,7 +159,8 @@ async def run_level(
     tokenizer,
     log_output: bool = False,
     log_file: str = "llm_outputs.log",
-) -> dict:
+    min_tps: float = MIN_TPS,
+) -> LevelResult:
     """
     Fire `concurrency` requests simultaneously; aggregate success and TTFT stats.
     """
@@ -153,67 +174,57 @@ async def run_level(
                 tokenizer,
                 log_output,
                 log_file,
+                min_tps,
             )
         )
         for _ in range(concurrency)
     ]
     results = await asyncio.gather(*tasks)
 
-    oks = [r for r in results if r["ok"]]
-    fails = [r for r in results if not r["ok"]]
-    tokens_per_second_list = [
-        r["tokens_per_second"] for r in oks if r["tokens_per_second"] is not None
+    oks = [r for r in results if r.ok]
+    tps_list = [
+        r.tps for r in oks if r.tps is not None
     ]
     tokens_generated_list = [
-        r["tokens_generated"] for r in oks if r["tokens_generated"] is not None
+        r.tokens_generated for r in oks if r.tokens_generated is not None
     ]
 
+    sla_ok_rate = len([r for r in results if r.tps_threshold]) / len(results)
+
     # Calculate average tokens per second
-    avg_tokens_per_second = (
-        statistics.mean(tokens_per_second_list) if tokens_per_second_list else 0.0
+    avg_tps = (
+        statistics.mean(tps_list) if tps_list else 0.0
     )
 
     # Check if average tokens per second is below threshold
-    if avg_tokens_per_second < 25:
+    if avg_tps < min_tps:
         print(
-            f"🚨 PERFORMANCE THRESHOLD EXCEEDED: Average tokens/second ({avg_tokens_per_second:.2f}) is below 25 t/s threshold!"
+            f"🚨 PERFORMANCE THRESHOLD EXCEEDED: Average tokens/second ({avg_tps:.2f}) is below {min_tps} t/s threshold!"
         )
         print(f"   This concurrency level ({concurrency}) is not sustainable.")
-        # Mark as failed if performance is too low
-        oks = []
-        fails = results
-        ok_rate = 0.0
-    else:
-        ok_rate = (len(oks) / len(results)) if results else 0.0
+        print(f"   SLA OK Rate: {sla_ok_rate:.4%}")
 
-    summary = {
-        "concurrency": concurrency,
-        "total": len(results),
-        "ok": len(oks),
-        "fail": len(fails),
-        "ok_rate": ok_rate,
-        "avg_tokens_per_second": avg_tokens_per_second,
-        "tokens_per_second_p50": (
-            statistics.median(tokens_per_second_list)
-            if tokens_per_second_list
-            else None
-        ),
-        "tokens_per_second_p95": (
-            (
-                sorted(tokens_per_second_list)[
-                    max(0, int(0.95 * (len(tokens_per_second_list) - 1)))
-                ]
-            )
-            if tokens_per_second_list
-            else None
-        ),
-        "avg_tokens_generated": (
-            statistics.mean(tokens_generated_list) if tokens_generated_list else None
-        ),
-        "errors_sample": fails[:5],
-    }
-    return summary
+    tps_mean = statistics.mean(tps_list)
+    tps_p50 = statistics.median(tps_list)
+    tps_p95 = sorted(tps_list)[
+        max(0, int(0.05 * (len(tps_list) - 1)))
+    ]
+    avg_tokens_generated = statistics.mean(tokens_generated_list) if tokens_generated_list else None
 
+    return LevelResult(
+        concurrency=concurrency,
+        ok_rate=sla_ok_rate,
+        avg_tokens_per_second=tps_mean,
+        tokens_per_second_p50=tps_p50,
+        tokens_per_second_p95=tps_p95,
+        avg_tokens_generated=avg_tokens_generated,
+    )
+
+
+@dataclass
+class CeilingResult:
+    max_sustainable: int
+    history: List[LevelResult]
 
 async def find_ceiling(
     engine: AsyncLLMEngine,
@@ -225,12 +236,12 @@ async def find_ceiling(
     tokenizer,
     log_output: bool = False,
     log_file: str = "llm_outputs.log",
-) -> dict:
+) -> CeilingResult:
     """
     Exponential ramp to first failure, then binary-search to find the max concurrency
     where ok_rate ≥ sla_ok_rate.
     """
-    history: List[dict] = []
+    history: List[LevelResult] = []
     conc = max(1, start_conc)
     last_pass = 0
     first_fail = None
@@ -247,16 +258,17 @@ async def find_ceiling(
             tokenizer,
             log_output,
             log_file,
+            min_tps=MIN_TPS,
         )
         history.append(res)
         print(f"[ramp] {json.dumps(res)}")
 
-        if res["ok_rate"] >= sla_ok_rate:
-            print(f"✅ Concurrency {conc} passed (success rate: {res['ok_rate']:.1%})")
+        if res.ok_rate >= sla_ok_rate:
+            print(f"✅ Concurrency {conc} passed (success rate: {res.ok_rate:.1%})")
             last_pass = conc
             conc *= 2
         else:
-            print(f"❌ Concurrency {conc} failed (success rate: {res['ok_rate']:.1%})")
+            print(f"❌ Concurrency {conc} failed (success rate: {res.ok_rate:.1%})")
             first_fail = conc
             break
 
@@ -265,7 +277,10 @@ async def find_ceiling(
         print(
             f"🎉 Never hit failure threshold - max sustainable concurrency: {last_pass}"
         )
-        return {"max_sustainable": last_pass, "history": history}
+        return CeilingResult(
+            max_sustainable=last_pass,
+            history=history,
+        )
 
     # Binary search (last_pass+1 .. first_fail-1)
     print(
@@ -296,4 +311,7 @@ async def find_ceiling(
             hi = mid - 1
 
     print(f"\n🎯 Binary search complete! Max sustainable concurrency: {last_pass}")
-    return {"max_sustainable": last_pass, "history": history}
+    return CeilingResult(
+        max_sustainable=last_pass,
+        history=history,
+    )
