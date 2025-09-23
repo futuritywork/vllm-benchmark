@@ -2,3 +2,4 @@
 **/__pycache__/
 *.log
 log/*
+engine_conn_results.json

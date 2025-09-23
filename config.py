@@ -5,7 +5,6 @@ Configuration and argument parsing for vLLM Engine-Direct Connection Ceiling Ben
 
 import argparse
 from dataclasses import dataclass
-from typing import Optional
 
 
 @dataclass
@@ -15,14 +14,11 @@ class BenchmarkConfig:
     # Benchmark behavior
     target_input_tokens: int
     max_new_tokens: int
-    ttft_timeout: float
-    hold_seconds: float
     start_concurrency: int
     max_concurrency_cap: int
     sla_ok_rate: float
     json_out: str
-    seed_chunk: str
-    tokenizer: Optional[str]
+    tokenizer: str | None
     trust_remote_code: bool
     log_output: bool
     log_file: str
@@ -33,8 +29,8 @@ class BenchmarkConfig:
     tensor_parallel_size: int
     gpu_memory_utilization: float
     max_model_len: int
-    max_num_seqs: Optional[int]
-    max_num_batched_tokens: Optional[int]
+    max_num_seqs: int | None
+    max_num_batched_tokens: int | None
     swap_space: int
     enforce_eager: bool
 
@@ -48,19 +44,10 @@ def parse_args() -> BenchmarkConfig:
     # Benchmark behavior
     p.add_argument("--target-input-tokens", type=int, default=5000)
     p.add_argument("--max-new-tokens", type=int, default=500)
-    p.add_argument("--ttft-timeout", type=float, default=60.0)
-    p.add_argument("--hold-seconds", type=float, default=5.0)
     p.add_argument("--start-concurrency", type=int, default=1)
     p.add_argument("--max-concurrency-cap", type=int, default=4096)
     p.add_argument("--sla-ok-rate", type=float, default=0.99)
     p.add_argument("--json-out", default="engine_conn_results.json")
-    p.add_argument(
-        "--seed-chunk",
-        default=(
-            "Discuss long-context LLM serving: prefill vs. decode throughput, batching, "
-            "KV cache pressure, scheduler fairness, memory fragmentation, and queuing. "
-        ),
-    )
     p.add_argument(
         "--tokenizer",
         default=None,
@@ -100,13 +87,10 @@ def parse_args() -> BenchmarkConfig:
     return BenchmarkConfig(
         target_input_tokens=args.target_input_tokens,
         max_new_tokens=args.max_new_tokens,
-        ttft_timeout=args.ttft_timeout,
-        hold_seconds=args.hold_seconds,
         start_concurrency=args.start_concurrency,
         max_concurrency_cap=args.max_concurrency_cap,
         sla_ok_rate=args.sla_ok_rate,
         json_out=args.json_out,
-        seed_chunk=args.seed_chunk,
         tokenizer=args.tokenizer,
         trust_remote_code=args.trust_remote_code,
         log_output=args.log_output,

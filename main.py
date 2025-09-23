@@ -45,7 +45,6 @@ import os
 from transformers import AutoTokenizer
 
 from config import parse_args
-from prompt_builder import build_prompt_of_tokens
 from engine_manager import create_engine, create_sampling_params
 from benchmark import run_level, find_ceiling
 
@@ -111,7 +110,6 @@ async def main():
     print(f"📊 Max Sustainable Concurrency: {max_sustainable}")
     print(f"🎯 Success Rate Threshold: ≥ {config.sla_ok_rate:.1%}")
     print(f"⚡ Performance Threshold: ≥ 25 tokens/second")
-    print(f"🕐 Timeout: ≤ {config.ttft_timeout}s")
     print(f"🔢 Max Tokens per Request: {config.max_new_tokens}")
     # Show CUDA_VISIBLE_DEVICES if set
     cuda_devices = os.environ.get('CUDA_VISIBLE_DEVICES')
