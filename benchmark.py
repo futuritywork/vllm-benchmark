@@ -207,25 +207,27 @@ async def run_level(
 
     sla_ok_rate = len([r for r in results if r.tps_threshold]) / len(results)
 
-    # Calculate average tokens per second
-    avg_tps = (
-        statistics.mean(tps_list) if tps_list else 0.0
-    )
+    # Calculate statistics, handling empty lists
+    if tps_list:
+        tps_mean = statistics.mean(tps_list)
+        tps_p50 = statistics.median(tps_list)
+        tps_p95 = sorted(tps_list)[
+            max(0, int(0.05 * (len(tps_list) - 1)))
+        ]
+    else:
+        tps_mean = 0.0
+        tps_p50 = 0.0
+        tps_p95 = 0.0
+
+    avg_tokens_generated = statistics.mean(tokens_generated_list) if tokens_generated_list else None
 
     # Check if average tokens per second is below threshold
-    if avg_tps < min_tps:
+    if tps_mean < min_tps:
         print(
-            f"🚨 PERFORMANCE THRESHOLD EXCEEDED: Average tokens/second ({avg_tps:.2f}) is below {min_tps} t/s threshold!"
+            f"🚨 PERFORMANCE THRESHOLD EXCEEDED: Average tokens/second ({tps_mean:.2f}) is below {min_tps} t/s threshold!"
         )
         print(f"   This concurrency level ({concurrency}) is not sustainable.")
         print(f"   SLA OK Rate: {sla_ok_rate:.4%}")
-
-    tps_mean = statistics.mean(tps_list)
-    tps_p50 = statistics.median(tps_list)
-    tps_p95 = sorted(tps_list)[
-        max(0, int(0.05 * (len(tps_list) - 1)))
-    ]
-    avg_tokens_generated = statistics.mean(tokens_generated_list) if tokens_generated_list else None
 
     return LevelResult(
         concurrency=concurrency,
