@@ -13,23 +13,20 @@ from transformers import AutoTokenizer, AutoModel
 def download_model_and_tokenizer(model_name: str, trust_remote_code: bool = True):
     """
     Download a model and its tokenizer from Hugging Face to the default cache location.
-    
+
     Args:
         model_name: Hugging Face model identifier (e.g., "Qwen/Qwen3-30B-A3B")
         trust_remote_code: Whether to trust remote code from the model
     """
     print(f"🤖 Downloading model: {model_name}")
     print("📁 Using default Hugging Face cache location")
-    
+
     try:
         # Download tokenizer to default cache
         print("📥 Downloading tokenizer...")
-        AutoTokenizer.from_pretrained(
-            model_name,
-            trust_remote_code=trust_remote_code
-        )
+        AutoTokenizer.from_pretrained(model_name, trust_remote_code=trust_remote_code)
         print("✅ Tokenizer downloaded successfully")
-        
+
         # Download model to default cache
         print("📥 Downloading model (this may take a while)...")
         AutoModel.from_pretrained(
@@ -37,16 +34,19 @@ def download_model_and_tokenizer(model_name: str, trust_remote_code: bool = True
             trust_remote_code=trust_remote_code,
         )
         print("✅ Model downloaded successfully")
-        
+
         # Get the cache directory path
         from transformers import file_utils
+
         cache_dir = file_utils.default_cache_path
         print(f"📂 Models cached in: {cache_dir}")
-        
+
         print(f"🎉 Model '{model_name}' downloaded successfully to Hugging Face cache")
-        
-        return model_name  # Return the original model name since it will be found in cache
-        
+
+        return (
+            model_name  # Return the original model name since it will be found in cache
+        )
+
     except Exception as e:
         print(f"❌ Error downloading model: {e}")
         return None
@@ -58,23 +58,21 @@ def main():
         description="Download models from Hugging Face to default cache location"
     )
     parser.add_argument(
-        "model_name",
-        help="Hugging Face model identifier (e.g., 'Qwen/Qwen3-30B-A3B')"
+        "model_name", help="Hugging Face model identifier (e.g., 'Qwen/Qwen3-30B-A3B')"
     )
     parser.add_argument(
         "--no-trust-remote-code",
         action="store_true",
-        help="Don't trust remote code from the model"
+        help="Don't trust remote code from the model",
     )
-    
+
     args = parser.parse_args()
-    
+
     # Download the model
     result = download_model_and_tokenizer(
-        model_name=args.model_name,
-        trust_remote_code=not args.no_trust_remote_code
+        model_name=args.model_name, trust_remote_code=not args.no_trust_remote_code
     )
-    
+
     if result:
         print(f"\n🚀 To use this model in benchmarks, use:")
         print(f"   --model {result}")
