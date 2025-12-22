@@ -101,6 +101,9 @@ async def stream_once(
 
     except Exception as e:
         error = repr(e)
+        # Ensure time_f is set even if an exception occurs
+        if time_f is None:
+            time_f = now()
 
     # Ensure cleanup: abort the request if it's still scheduled (only if not successful)
     if not ok:
