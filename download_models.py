@@ -7,7 +7,7 @@ Downloads models from Hugging Face to local disk for offline use.
 
 import argparse
 import sys
-from transformers import AutoTokenizer, AutoModelForCausalLM
+from transformers import AutoTokenizer, AutoModel
 
 
 def download_model_and_tokenizer(model_name: str, trust_remote_code: bool = True):
@@ -32,7 +32,7 @@ def download_model_and_tokenizer(model_name: str, trust_remote_code: bool = True
         
         # Download model to default cache
         print("📥 Downloading model (this may take a while)...")
-        AutoModelForCausalLM.from_pretrained(
+        AutoModel.from_pretrained(
             model_name,
             trust_remote_code=trust_remote_code,
         )
