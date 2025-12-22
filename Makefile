@@ -39,10 +39,10 @@ main:
 	python main.py \
 		--model $(MODEL) \
 		--max-concurrency-cap 1024 \
-		--start-concurrency 2 \
+		--start-concurrency 1 \
 		--log-output \
 		--tensor-parallel-size $(TPAR) \
-		--max-new-tokens 500 \
+		--max-new-tokens 50000 \
 		--trust-remote-code
 
 # Define function: set_tpar
