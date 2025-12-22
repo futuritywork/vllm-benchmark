@@ -14,9 +14,30 @@ import json
 import os
 import time
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Optional
 
 from vllm import LLM, SamplingParams
+
+
+def get_available_gpus() -> int:
+    """Detect the number of available GPUs."""
+    try:
+        import torch
+
+        if torch.cuda.is_available():
+            return torch.cuda.device_count()
+    except ImportError:
+        pass
+    except Exception:
+        pass
+
+    # Fallback: check CUDA_VISIBLE_DEVICES environment variable
+    cuda_visible = os.environ.get("CUDA_VISIBLE_DEVICES")
+    if cuda_visible:
+        # Count comma-separated GPU indices
+        return len([x for x in cuda_visible.split(",") if x.strip()])
+
+    return 1  # Default to 1 if we can't detect
 
 
 class BenchmarkResult:
@@ -483,6 +504,12 @@ async def main():
         default=600.0,
         help="Timeout per request in seconds (default: 600.0)",
     )
+    parser.add_argument(
+        "--tensor-parallel-size",
+        type=int,
+        default=None,
+        help="Number of GPUs to use for tensor parallelism (default: auto-detect all available GPUs)",
+    )
 
     args = parser.parse_args()
 
@@ -499,11 +526,27 @@ async def main():
     print(f"Prompt length: {len(prompt)} characters")
     print(f"Model: {args.model}")
     print(f"Max tokens per request: {args.max_tokens}")
+
+    # Detect available GPUs
+    available_gpus = get_available_gpus()
+    tensor_parallel_size = args.tensor_parallel_size
+    if tensor_parallel_size is None:
+        tensor_parallel_size = available_gpus
+        print(f"Detected {available_gpus} GPU(s), using all of them")
+    else:
+        if tensor_parallel_size > available_gpus:
+            print(
+                f"Warning: Requested {tensor_parallel_size} GPUs but only {available_gpus} available"
+            )
+            tensor_parallel_size = available_gpus
+        print(
+            f"Using {tensor_parallel_size} GPU(s) (out of {available_gpus} available)"
+        )
     print()
 
     # Initialize vLLM
     print("Initializing vLLM...")
-    llm = LLM(model=args.model)
+    llm = LLM(model=args.model, tensor_parallel_size=tensor_parallel_size)
     print("vLLM initialized")
     print()
 
