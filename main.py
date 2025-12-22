@@ -56,7 +56,7 @@ async def main():
     # 1) Build ~5k-token prompt
     tokenizer_id = config.tokenizer or config.model
 
-    f = open("1984.txt", "r")
+    f = open("1984_prompt.txt", "r")
     prompt = f.read()
 
     tokenizer = AutoTokenizer.from_pretrained(
