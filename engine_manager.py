@@ -36,14 +36,34 @@ def create_engine(config: BenchmarkConfig) -> AsyncLLMEngine:
     except (TypeError, RuntimeError, Exception) as e:
         error_msg = str(e)
         error_repr = repr(e)
-        # Check for the specific processor type error (can appear in error message or traceback)
-        if (
+        import traceback
+
+        tb_str = "".join(traceback.format_exception(type(e), e, e.__traceback__))
+
+        # Check for the specific processor type error (can appear in error message, repr, or traceback)
+        # Also check for "Engine core initialization failed" which often wraps the processor error
+        is_processor_error = (
             "ProcessorMixin" in error_msg
             or "PreTrainedTokenizerFast" in error_msg
             or "Invalid type of HuggingFace processor" in error_msg
             or "ProcessorMixin" in error_repr
             or "PreTrainedTokenizerFast" in error_repr
-        ):
+            or "ProcessorMixin" in tb_str
+            or "PreTrainedTokenizerFast" in tb_str
+            or "Invalid type of HuggingFace processor" in tb_str
+        )
+
+        # Check if it's an engine initialization failure (which often contains processor errors in logs)
+        is_engine_init_failure = (
+            "Engine core initialization failed" in error_msg
+            or "WorkerProc initialization failed" in error_msg
+            or "WorkerProc initialization failed" in tb_str
+        )
+
+        # For GLM-4.6V specifically, this is almost certainly the processor issue
+        is_glm_model = "GLM" in config.model or "glm" in config.model.lower()
+
+        if is_processor_error or (is_engine_init_failure and is_glm_model):
             print("\n" + "=" * 80, file=sys.stderr)
             print("ERROR: vLLM processor type mismatch detected", file=sys.stderr)
             print("=" * 80, file=sys.stderr)
@@ -67,6 +87,11 @@ def create_engine(config: BenchmarkConfig) -> AsyncLLMEngine:
                 "but receives a tokenizer instead of the expected ProcessorMixin.",
                 file=sys.stderr,
             )
+            if is_engine_init_failure and not is_processor_error:
+                print(
+                    "\nNote: The actual processor error may be visible in the worker process logs above.",
+                    file=sys.stderr,
+                )
             print("\nPossible solutions:", file=sys.stderr)
             print(
                 "1. Check if the model is compatible with your vLLM version",
@@ -82,7 +107,7 @@ def create_engine(config: BenchmarkConfig) -> AsyncLLMEngine:
                 "4. Check vLLM GitHub issues for this specific model:", file=sys.stderr
             )
             print(
-                f"   https://github.com/vllm-project/vllm/issues?q={config.model}",
+                f"   https://github.com/vllm-project/vllm/issues?q={config.model.replace('/', '%2F')}",
                 file=sys.stderr,
             )
             print("\nOriginal error:", file=sys.stderr)

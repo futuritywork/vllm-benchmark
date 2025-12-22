@@ -113,7 +113,7 @@ async def main():
     print(f"⚡ Performance Threshold: ≥ 25 tokens/second")
     print(f"🔢 Max Tokens per Request: {config.max_new_tokens}")
     # Show CUDA_VISIBLE_DEVICES if set
-    cuda_devices = os.environ.get('CUDA_VISIBLE_DEVICES')
+    cuda_devices = os.environ.get("CUDA_VISIBLE_DEVICES")
     if cuda_devices:
         print(f"🖥️  CUDA_VISIBLE_DEVICES: {cuda_devices}")
 
@@ -155,7 +155,7 @@ if __name__ == "__main__":
     except RuntimeError:
         # Already set, ignore
         pass
-    
+
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
