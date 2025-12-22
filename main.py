@@ -40,6 +40,7 @@ Note: GPU selection is controlled via CUDA_VISIBLE_DEVICES environment variable
 
 import asyncio
 import json
+import multiprocessing
 import os
 
 from transformers import AutoTokenizer
@@ -147,6 +148,14 @@ async def main():
 
 
 if __name__ == "__main__":
+    # Set multiprocessing start method to 'spawn' for vLLM compatibility
+    # This helps avoid issues with CUDA initialization in worker processes
+    try:
+        multiprocessing.set_start_method("spawn", force=True)
+    except RuntimeError:
+        # Already set, ignore
+        pass
+    
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
