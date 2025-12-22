@@ -116,7 +116,7 @@ async def stream_once(
     total_time = time_f - time_0
     tokens_per_second = None
 
-    if tokens_generated > 0:
+    if tokens_generated > 0 and total_time > 0:
         tokens_per_second = tokens_generated / total_time
 
     # Log the output if requested
@@ -128,12 +128,15 @@ async def stream_once(
                 f.write(f"Generated: {generated_text}\n")
                 f.write(f"Total Time: {total_time:.3f}s\n")
                 f.write(f"Tokens Generated: {tokens_generated}\n")
-                f.write(f"Tokens/Second: {tokens_per_second:.2f} t/s\n")
+                f.write(f"Tokens/Second: {tokens_per_second:.2f} t/s\n" if tokens_per_second is not None else "Tokens/Second: N/A\n")
                 f.write(f"Success: {ok and error is None}\n")
                 f.write(f"Error: {error}\n")
                 f.write("-" * 50 + "\n\n")
         except Exception as e:
             print(f"Warning: Failed to log output: {e}")
+
+    # Calculate tps_threshold: False if tokens_per_second is None, otherwise compare
+    tps_threshold = tokens_per_second is not None and tokens_per_second >= min_tps
 
     return StreamResult(
         ok=ok and error is None,
@@ -142,7 +145,7 @@ async def stream_once(
         tokens_generated=tokens_generated,
         tps=tokens_per_second,
         total_time=total_time,
-        tps_threshold=tokens_per_second >= min_tps,
+        tps_threshold=tps_threshold,
     )
 
 @dataclass
