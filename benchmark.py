@@ -110,11 +110,11 @@ async def stream_once(
             pass
 
     # Calculate tokens per second
-    total_time = time_f - time_0
+    total_time = (time_f - time_0) if time_f is not None else None
     tokens_per_second = None
 
     if tokens_generated > 0:
-        tokens_per_second = tokens_generated / total_time
+        tokens_per_second = tokens_generated / total_time if total_time is not None else None
 
     # Log the output if requested
     if log_output and generated_text:
@@ -137,9 +137,9 @@ async def stream_once(
         error=error,
         generated_text=generated_text,
         tokens_generated=tokens_generated,
-        tps=tokens_per_second,
-        total_time=total_time,
-        tps_threshold=tokens_per_second >= min_tps,
+        tps=tokens_per_second if tokens_per_second is not None else 0.0,
+        total_time=total_time if total_time is not None else 0.0,
+        tps_threshold=tokens_per_second is not None and tokens_per_second >= min_tps,
     )
 
 @dataclass
@@ -227,7 +227,7 @@ async def run_level(
         avg_tokens_per_second=tps_mean,
         tokens_per_second_p50=tps_p50,
         tokens_per_second_p95=tps_p95,
-        avg_tokens_generated=avg_tokens_generated,
+        avg_tokens_generated=avg_tokens_generated if avg_tokens_generated is not None else 0.0,
     )
 
 

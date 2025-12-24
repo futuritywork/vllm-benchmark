@@ -115,6 +115,12 @@ async def main():
     cuda_devices = os.environ.get('CUDA_VISIBLE_DEVICES')
     if cuda_devices:
         print(f"🖥️  CUDA_VISIBLE_DEVICES: {cuda_devices}")
+    # Show YARN configuration if set
+    if config.rope_scaling:
+        import json
+        print(f"🧵 RoPE Scaling: {json.dumps(config.rope_scaling)}")
+    if config.allow_long_max_model_len:
+        print(f"🔓 VLLM_ALLOW_LONG_MAX_MODEL_LEN: 1")
 
     if history:
         print(f"\n📈 Performance Summary:")

@@ -4,6 +4,7 @@ Configuration and argument parsing for vLLM Engine-Direct Connection Ceiling Ben
 """
 
 import argparse
+import json
 from dataclasses import dataclass
 
 
@@ -33,6 +34,8 @@ class BenchmarkConfig:
     max_num_batched_tokens: int | None
     swap_space: int
     enforce_eager: bool
+    rope_scaling: dict | None
+    allow_long_max_model_len: bool
 
 
 def parse_args() -> BenchmarkConfig:
@@ -81,8 +84,27 @@ def parse_args() -> BenchmarkConfig:
     p.add_argument(
         "--enforce-eager", action="store_true", help="Disable CUDA graph capture if set"
     )
+    p.add_argument(
+        "--rope-scaling",
+        type=str,
+        default=None,
+        help="RoPE scaling configuration as JSON string (e.g., '{\"rope_type\":\"yarn\",\"factor\":4.0,\"original_max_position_embeddings\":32768}')",
+    )
+    p.add_argument(
+        "--allow-long-max-model-len",
+        action="store_true",
+        help="Set VLLM_ALLOW_LONG_MAX_MODEL_LEN=1 environment variable (required for YARN with extended context)",
+    )
 
     args = p.parse_args()
+
+    # Parse rope_scaling JSON if provided
+    rope_scaling = None
+    if args.rope_scaling:
+        try:
+            rope_scaling = json.loads(args.rope_scaling)
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Invalid JSON for --rope-scaling: {e}")
 
     return BenchmarkConfig(
         target_input_tokens=args.target_input_tokens,
@@ -104,4 +126,6 @@ def parse_args() -> BenchmarkConfig:
         max_num_batched_tokens=args.max_num_batched_tokens,
         swap_space=args.swap_space,
         enforce_eager=args.enforce_eager,
+        rope_scaling=rope_scaling,
+        allow_long_max_model_len=args.allow_long_max_model_len,
     )
