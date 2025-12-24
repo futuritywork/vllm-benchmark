@@ -5,6 +5,7 @@ Core benchmarking functions for vLLM Engine-Direct Connection Ceiling Benchmark
 
 import asyncio
 from dataclasses import dataclass
+from datetime import datetime
 import json
 import statistics
 import time
@@ -174,7 +175,12 @@ async def run_level(
     """
     Fire `concurrency` requests simultaneously; aggregate success and TTFT stats.
     """
+    start_time = datetime.now()
+    start_timestamp = start_time.strftime("%Y-%m-%d %H:%M:%S")
     print(f"🔥 Firing {concurrency} concurrent requests...")
+    print(f"⏰ Iteration started at: {start_timestamp}")
+    
+    iteration_start = now()
     tasks = [
         asyncio.create_task(
             stream_once(
@@ -190,6 +196,14 @@ async def run_level(
         for _ in range(concurrency)
     ]
     results = await asyncio.gather(*tasks)
+    
+    iteration_end = now()
+    iteration_duration = iteration_end - iteration_start
+    end_time = datetime.now()
+    end_timestamp = end_time.strftime("%Y-%m-%d %H:%M:%S")
+    
+    print(f"⏰ Iteration ended at: {end_timestamp}")
+    print(f"⏱️  Iteration duration: {iteration_duration:.2f} seconds ({iteration_duration/60:.2f} minutes)")
 
     oks = [r for r in results if r.ok]
     tps_list = [

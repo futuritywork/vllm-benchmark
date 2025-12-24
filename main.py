@@ -39,8 +39,10 @@ Note: GPU selection is controlled via CUDA_VISIBLE_DEVICES environment variable
 """
 
 import asyncio
+from datetime import datetime
 import json
 import os
+import time
 
 from transformers import AutoTokenizer
 
@@ -51,6 +53,15 @@ from benchmark import run_level, find_ceiling
 
 async def main():
     """Main entry point for the benchmark"""
+    benchmark_start_time = datetime.now()
+    benchmark_start_timestamp = benchmark_start_time.strftime("%Y-%m-%d %H:%M:%S")
+    benchmark_start_perf = time.perf_counter()
+    
+    print("=" * 60)
+    print("🚀 BENCHMARK STARTED")
+    print(f"⏰ Start time: {benchmark_start_timestamp}")
+    print("=" * 60)
+    
     config = parse_args()
 
     # 1) Build ~5k-token prompt
@@ -99,9 +110,18 @@ async def main():
         log_output=config.log_output,
         log_file=config.log_file,
     )
+    
+    benchmark_end_perf = time.perf_counter()
+    benchmark_end_time = datetime.now()
+    benchmark_end_timestamp = benchmark_end_time.strftime("%Y-%m-%d %H:%M:%S")
+    benchmark_duration = benchmark_end_perf - benchmark_start_perf
 
     print("\n" + "=" * 60)
     print("🎯 BENCHMARK RESULTS")
+    print("=" * 60)
+    print(f"⏰ Benchmark started at: {benchmark_start_timestamp}")
+    print(f"⏰ Benchmark ended at: {benchmark_end_timestamp}")
+    print(f"⏱️  Total benchmark duration: {benchmark_duration:.2f} seconds ({benchmark_duration/60:.2f} minutes)")
     print("=" * 60)
 
     max_sustainable = result.max_sustainable
