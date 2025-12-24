@@ -15,7 +15,7 @@ class SafeList(list):
 def main(): 
   args = SafeList(sys.argv)
   model_name = args.at(1, "Qwen/Qwen2-7B-Instruct-AWQ")
-  filename = args.at(2, "1984.txt")
+  filename = args.at(2, "1984_prompt.txt")
   context = open(filename, "r").read()
   tokens_generated = count_tokens(model_name, context)
   print(tokens_generated)

@@ -42,7 +42,7 @@ setup:
 	./setup.sh
 
 main:
-	python main.py \
+	uv run main.py \
 		--model $(MODEL) \
 		--max-concurrency-cap 1024 \
 		--start-concurrency 2 \
