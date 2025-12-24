@@ -49,6 +49,7 @@ from transformers import AutoTokenizer
 from config import parse_args
 from engine_manager import create_engine, create_sampling_params
 from benchmark import run_level, find_ceiling
+from prompt_selector import get_prompt_path
 
 
 async def main():
@@ -64,11 +65,15 @@ async def main():
     
     config = parse_args()
 
+    # 1) Select prompt file (interactive if not provided)
+    prompt_path = get_prompt_path(config.prompt)
+    print(f"📄 Loading prompt from: {prompt_path}")
+    
     # 1) Build ~5k-token prompt
     tokenizer_id = config.tokenizer or config.model
 
-    f = open("1984_prompt.txt", "r")
-    prompt = f.read()
+    with open(prompt_path, "r") as f:
+        prompt = f.read()
 
     tokenizer = AutoTokenizer.from_pretrained(
         tokenizer_id,

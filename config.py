@@ -23,6 +23,7 @@ class BenchmarkConfig:
     trust_remote_code: bool
     log_output: bool
     log_file: str
+    prompt: str | None
 
     # Engine args
     model: str
@@ -60,6 +61,11 @@ def parse_args() -> BenchmarkConfig:
     p.add_argument("--log-output", action="store_true", help="Log LLM outputs to file")
     p.add_argument(
         "--log-file", default="llm_outputs.log", help="File to log LLM outputs"
+    )
+    p.add_argument(
+        "--prompt",
+        default=None,
+        help="Path to prompt file (if not provided, will prompt interactively from prompts/ folder)",
     )
 
     # Engine args (common subset; mirrors vLLM CLI flags)
@@ -117,6 +123,7 @@ def parse_args() -> BenchmarkConfig:
         trust_remote_code=args.trust_remote_code,
         log_output=args.log_output,
         log_file=args.log_file,
+        prompt=args.prompt,
         model=args.model,
         dtype=args.dtype,
         tensor_parallel_size=args.tensor_parallel_size,
