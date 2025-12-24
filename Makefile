@@ -7,10 +7,10 @@ help:
 	@echo "  download      - Download a specific model to cache"
 	@echo ""
 	@echo "Single GPU benchmarks:"
-	@echo "  kimi              - Run Kimi-K2-Instruct benchmark (tensor parallel size 8)"
-	@echo "  qwen235           - Run Qwen3-235B benchmark (tensor parallel size 8)"
-	@echo "  qwen30-single     - Run Qwen3-30B benchmark (tensor parallel size 1)"
-	@echo "  qwen30-fp8-single - Run Qwen3-30B-FP8 benchmark (tensor parallel size 1)"
+	@echo "  kimi              - Run Kimi-K2-Instruct benchmark (tensor parallel size 8, use P=N to override)"
+	@echo "  qwen235           - Run Qwen3-235B benchmark (tensor parallel size 8, use P=N to override)"
+	@echo "  qwen30-single     - Run Qwen3-30B benchmark with YARN (tensor parallel size 1, use P=N to override)"
+	@echo "  qwen30-fp8-single - Run Qwen3-30B-FP8 benchmark with YARN (tensor parallel size 1, use P=N to override)"
 	@echo ""
 	@echo "Multi-GPU benchmarks:"
 	@echo "  qwen30-all-gpus      - Run Qwen3-30B on all GPUs (interactive)"
@@ -51,11 +51,29 @@ main:
 		--max-new-tokens 500 \
 		--trust-remote-code
 
+main-qwen30-yarn:
+	uv run main.py \
+		--model $(MODEL) \
+		--max-concurrency-cap 1024 \
+		--start-concurrency 2 \
+		--log-output \
+		--tensor-parallel-size $(TPAR) \
+		--max-new-tokens 5000 \
+		--trust-remote-code \
+		--allow-long-max-model-len \
+		--max-model-len 131072 \
+		--rope-scaling '{"rope_type":"yarn","factor":4.0,"original_max_position_embeddings":32768}'
+
+# Detect number of CUDA devices (default for set_tpar)
+# Try nvidia-smi first, then detect_gpus.py, fallback to 1
+# Use a shell one-liner that ensures at least 1 GPU
+GPU_COUNT := $(shell count=$$(nvidia-smi --list-gpus 2>/dev/null | wc -l | tr -d ' ' || python detect_gpus.py 2>/dev/null | wc -w | tr -d ' ' || echo 1); if [ -z "$$count" ] || [ "$$count" -eq 0 ]; then echo 1; else echo $$count; fi)
+
 # Define function: set_tpar
 # Usage: $(call set_tpar,<value>)
-# Returns: 8 if value is empty, otherwise validates and returns value
+# Returns: detected GPU count if value is empty, otherwise validates and returns value
 define set_tpar
-$(if $1,$(call isnum,$1),8)
+$(if $1,$(call isnum,$1),$(GPU_COUNT))
 endef
 
 kimi:
@@ -68,27 +86,19 @@ qwen235:
 
 qwen30:
 	$(eval TPAR := $(call set_tpar,$(P)))
-	make main MODEL=Qwen/Qwen3-30B-A3B TPAR=$(TPAR)
+	make main-qwen30-yarn MODEL=Qwen/Qwen3-30B-A3B TPAR=$(TPAR)
 
 qwen30-single:
-	uv run main.py \
-		--model Qwen/Qwen3-30B-A3B \
-		--max-concurrency-cap 1024 \
-		--start-concurrency 2 \
-		--log-output \
-		--tensor-parallel-size 1 \
-		--max-new-tokens 5000 \
-		--trust-remote-code \
-		--allow-long-max-model-len \
-		--max-model-len 131072 \
-		--rope-scaling '{"rope_type":"yarn","factor":4.0,"original_max_position_embeddings":32768}'
+	$(eval TPAR := $(if $(P),$(call set_tpar,$(P)),1))
+	make main-qwen30-yarn MODEL=Qwen/Qwen3-30B-A3B TPAR=$(TPAR)
 
 qwen30-fp8:
 	$(eval TPAR := $(call set_tpar,$(P)))
-	make main MODEL=Qwen/Qwen3-30B-A3B-FP8 TPAR=$(TPAR)
+	make main-qwen30-yarn MODEL=Qwen/Qwen3-30B-A3B-FP8 TPAR=$(TPAR)
 
 qwen30-fp8-single:
-	make qwen30-fp8 P=1
+	$(eval TPAR := $(if $(P),$(call set_tpar,$(P)),1))
+	make main-qwen30-yarn MODEL=Qwen/Qwen3-30B-A3B-FP8 TPAR=$(TPAR)
 
 # Run Qwen 3.0 on all available GPUs with tensor parallel size of 1
 qwen30-all-gpus:
