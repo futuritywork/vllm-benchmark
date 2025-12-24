@@ -682,6 +682,8 @@ The End
 
 # QUESTIONS
 
+Answer these questions in great detail below. We expect at least a paragraph per response.
+
 1. In what ways is the "Order of Silence" fundamentally different from the "Digital Collective," and what does that shift imply about how threats to knowledge evolve across eras?
 
 2. The story frames "knowledge" as both power and a public good. Where does the narrative draw the line between protection and paternalism—and does Elena ever cross it?
@@ -702,3 +704,4 @@ The End
 
 10. If the story's core conflict is "control of knowledge," what is its core solution: distributed guardianship, institutional alliances, technological safeguards, or moral transformation—and what costs does that solution carry?
 
+# ANSWERS
