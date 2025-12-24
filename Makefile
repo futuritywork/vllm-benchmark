@@ -22,6 +22,9 @@ help:
 	@echo "  qwen30-parallel        - Run Qwen3-30B on all GPUs in parallel"
 	@echo "  qwen30-fp8-parallel    - Run Qwen3-30B-FP8 on all GPUs in parallel"
 	@echo ""
+	@echo "Batch benchmarks:"
+	@echo "  bench-prompts      - Run benchmark for each prompts/*.txt (configure runner via RUN_TARGET=main|main-qwen30-yarn)"
+	@echo ""
 	@echo "Results analysis:"
 	@echo "  list-timestamps       - List available parallel benchmark timestamps"
 	@echo "  aggregate-results     - Aggregate results for a specific timestamp"
@@ -38,6 +41,13 @@ define isnum
 $(if $(filter-out 0 1 2 3 4 5 6 7 8 9,$(firstword $(subst , ,$1))),-1,$1)
 endef
 
+PROMPTS_DIR ?= prompts
+PROMPT_LOG_DIR ?= logs/prompts
+PROMPT_JSON_DIR ?= results/prompts
+RUN_TARGET ?= main
+LOG_FILE ?= llm_outputs.log
+JSON_OUT ?= engine_conn_results.json
+
 setup:
 	./setup.sh
 
@@ -47,6 +57,9 @@ main:
 		--max-concurrency-cap 1024 \
 		--start-concurrency 2 \
 		--log-output \
+		--log-file $(LOG_FILE) \
+		$(if $(PROMPT),--prompt $(PROMPT),) \
+		--json-out $(JSON_OUT) \
 		--tensor-parallel-size $(TPAR) \
 		--max-new-tokens 500 \
 		--trust-remote-code
@@ -57,12 +70,35 @@ main-qwen30-yarn:
 		--max-concurrency-cap 1024 \
 		--start-concurrency 2 \
 		--log-output \
+		--log-file $(LOG_FILE) \
+		$(if $(PROMPT),--prompt $(PROMPT),) \
+		--json-out $(JSON_OUT) \
 		--tensor-parallel-size $(TPAR) \
 		--max-new-tokens 5000 \
 		--trust-remote-code \
 		--allow-long-max-model-len \
 		--max-model-len 131072 \
 		--rope-scaling '{"rope_type":"yarn","factor":4.0,"original_max_position_embeddings":32768}'
+
+bench-prompts:
+	@mkdir -p "$(PROMPTS_DIR)" "$(PROMPT_LOG_DIR)" "$(PROMPT_JSON_DIR)"
+	@found=0; \
+	for prompt in $(shell find $(PROMPTS_DIR) -maxdepth 1 -type f -name '*.txt' | sort); do \
+		found=1; \
+		base=$${prompt##*/}; \
+		name=$${base%.txt}; \
+		log="$(PROMPT_LOG_DIR)/$${name}.log"; \
+		json="$(PROMPT_JSON_DIR)/$${name}.json"; \
+		echo "▶️  Running $$prompt with $(RUN_TARGET) -> $$log"; \
+		: > "$$log"; \
+		$(MAKE) $(RUN_TARGET) MODEL="$(MODEL)" TPAR="$(TPAR)" PROMPT="$$prompt" LOG_FILE="$$log" JSON_OUT="$$json" >> "$$log" 2>&1 || { \
+			status=$$?; \
+			echo "❌ Benchmark failed for $$prompt (exit $$status)" | tee -a "$$log"; \
+		}; \
+	done; \
+	if [ $$found -eq 0 ]; then \
+		echo "No prompts found in $(PROMPTS_DIR)"; \
+	fi
 
 # Detect number of CUDA devices (default for set_tpar)
 # Try nvidia-smi first, then detect_gpus.py, fallback to 1
