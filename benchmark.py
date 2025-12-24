@@ -156,6 +156,8 @@ class LevelResult:
     tokens_per_second_p50: float
     tokens_per_second_p95: float
     avg_tokens_generated: float
+    total_tokens_generated: int
+    total_tokens_per_second: float
 
     def to_dict(self):
         return {
@@ -165,6 +167,8 @@ class LevelResult:
             "tokens_per_second_p50": self.tokens_per_second_p50,
             "tokens_per_second_p95": self.tokens_per_second_p95,
             "avg_tokens_generated": self.avg_tokens_generated,
+            "total_tokens_generated": self.total_tokens_generated,
+            "total_tokens_per_second": self.total_tokens_per_second,
         }
 
 async def run_level(
@@ -217,6 +221,7 @@ async def run_level(
     tokens_generated_list = [
         r.tokens_generated for r in oks if r.tokens_generated is not None
     ]
+    total_tokens_generated = sum(tokens_generated_list)
 
     sla_ok_rate = len([r for r in results if r.tps_threshold]) / len(results)
 
@@ -239,6 +244,9 @@ async def run_level(
         max(0, int(0.05 * (len(tps_list) - 1)))
     ]
     avg_tokens_generated = statistics.mean(tokens_generated_list) if tokens_generated_list else None
+    total_tokens_per_second = (
+        total_tokens_generated / iteration_duration if iteration_duration > 0 else 0.0
+    )
 
     return LevelResult(
         concurrency=concurrency,
@@ -247,6 +255,8 @@ async def run_level(
         tokens_per_second_p50=tps_p50,
         tokens_per_second_p95=tps_p95,
         avg_tokens_generated=avg_tokens_generated if avg_tokens_generated is not None else 0.0,
+        total_tokens_generated=total_tokens_generated,
+        total_tokens_per_second=total_tokens_per_second,
     )
 
 

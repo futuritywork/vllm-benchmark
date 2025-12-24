@@ -151,7 +151,7 @@ async def main():
     if history:
         print(f"\n📈 Performance Summary:")
         print(
-            f"{'Concurrency':<12} {'Success Rate':<12} {'Avg Tokens/s':<12} {'P50 Tokens/s':<12} {'P95 Tokens/s':<12}"
+            f"{'Concurrency':<12} {'Success Rate':<12} {'Avg Tokens/s':<12} {'P50 Tokens/s':<12} {'P95 Tokens/s':<12} {'Total Tokens':<14} {'Total TPS':<12}"
         )
         print("-" * 60)
 
@@ -161,10 +161,12 @@ async def main():
             avg_tps = res.avg_tokens_per_second
             p50_tps = res.tokens_per_second_p50
             p95_tps = res.tokens_per_second_p95
+            total_tokens = res.total_tokens_generated
+            total_tps = res.total_tokens_per_second
 
             status = "✅" if ok_rate >= config.sla_ok_rate else "❌"
             print(
-                f"{conc:<12} {ok_rate:.1%} {status:<2} {avg_tps:<12.1f} {p50_tps:<12.1f} {p95_tps:<12.1f}"
+                f"{conc:<12} {ok_rate:.1%} {status:<2} {avg_tps:<12.1f} {p50_tps:<12.1f} {p95_tps:<12.1f} {total_tokens:<14} {total_tps:<12.1f}"
             )
 
     print(f"\n💾 Results saved to: {config.json_out}")
