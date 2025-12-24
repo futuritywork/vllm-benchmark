@@ -76,8 +76,9 @@ async def main():
         use_fast=True,
     )
     ids = tokenizer.encode(prompt, add_special_tokens=False)
+    prompt_tokens = len(ids)
     print(
-        f"[prompt] target={config.target_input_tokens} measured={len(ids)} chars={len(prompt)}"
+        f"[prompt] target={config.target_input_tokens} measured={prompt_tokens} chars={len(prompt)}"
     )
 
     # 2) Spin up AsyncLLMEngine
@@ -131,13 +132,13 @@ async def main():
     print(f"🎯 Success Rate Threshold: ≥ {config.sla_ok_rate:.1%}")
     print(f"⚡ Performance Threshold: ≥ 25 tokens/second")
     print(f"🔢 Max Tokens per Request: {config.max_new_tokens}")
+    print(f"📝 Prompt Length: {prompt_tokens} tokens")
     # Show CUDA_VISIBLE_DEVICES if set
     cuda_devices = os.environ.get('CUDA_VISIBLE_DEVICES')
     if cuda_devices:
         print(f"🖥️  CUDA_VISIBLE_DEVICES: {cuda_devices}")
     # Show YARN configuration if set
     if config.rope_scaling:
-        import json
         print(f"🧵 RoPE Scaling: {json.dumps(config.rope_scaling)}")
     if config.allow_long_max_model_len:
         print(f"🔓 VLLM_ALLOW_LONG_MAX_MODEL_LEN: 1")
