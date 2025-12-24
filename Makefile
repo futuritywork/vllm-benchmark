@@ -71,17 +71,17 @@ qwen30:
 	make main MODEL=Qwen/Qwen3-30B-A3B TPAR=$(TPAR)
 
 qwen30-single:
-  uv run main.py \
-	--model Qwen/Qwen3-30B-A3B \
-	--max-concurrency-cap 1024 \
-	--start-concurrency 2 \
-	--log-output \
-	--tensor-parallel-size 1 \
-	--max-new-tokens 5000 \
-	--trust-remote-code \
-	--allow-long-max-model-len \
-	--max-model-len 131072 \
-	--rope-scaling '{"rope_type":"yarn","factor":4.0,"original_max_position_embeddings":32768}'
+	uv run main.py \
+		--model Qwen/Qwen3-30B-A3B \
+		--max-concurrency-cap 1024 \
+		--start-concurrency 2 \
+		--log-output \
+		--tensor-parallel-size 1 \
+		--max-new-tokens 5000 \
+		--trust-remote-code \
+		--allow-long-max-model-len \
+		--max-model-len 131072 \
+		--rope-scaling '{"rope_type":"yarn","factor":4.0,"original_max_position_embeddings":32768}'
 
 qwen30-fp8:
 	$(eval TPAR := $(call set_tpar,$(P)))
