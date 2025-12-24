@@ -680,25 +680,25 @@ The future was uncertain, but it was also full of possibility. And as long as th
 
 The End
 
-# Questions
+# QUESTIONS
 
-In what ways is the “Order of Silence” fundamentally different from the “Digital Collective,” and what does that shift imply about how threats to knowledge evolve across eras?
+1. In what ways is the "Order of Silence" fundamentally different from the "Digital Collective," and what does that shift imply about how threats to knowledge evolve across eras?
 
-The story frames “knowledge” as both power and a public good. Where does the narrative draw the line between protection and paternalism—and does Elena ever cross it?
+2. The story frames "knowledge" as both power and a public good. Where does the narrative draw the line between protection and paternalism—and does Elena ever cross it?
 
-What does it mean for the libraries to “choose” guardians? Is guardianship portrayed as consent, destiny, a burden, or a test of character—and why?
+3. What does it mean for the libraries to "choose" guardians? Is guardianship portrayed as consent, destiny, a burden, or a test of character—and why?
 
-How does the story define “preservation”? Is preserving knowledge primarily about access, authenticity, redundancy, physical artifacts, or cultural context—and which does the story ultimately privilege?
+4. How does the story define "preservation"? Is preserving knowledge primarily about access, authenticity, redundancy, physical artifacts, or cultural context—and which does the story ultimately privilege?
 
-The network of guardians functions like a counter-institution. What are the risks of building a “good” version of centralized power, and how does the story attempt to prevent the guardians from becoming what they fight?
+5. The network of guardians functions like a counter-institution. What are the risks of building a "good" version of centralized power, and how does the story attempt to prevent the guardians from becoming what they fight?
 
-Marcus Chen argues that selective access is necessary for humanity’s future. What assumptions about people, risk, and governance underpin his worldview—and how does the story rebut (or fail to rebut) them?
+6. Marcus Chen argues that selective access is necessary for humanity's future. What assumptions about people, risk, and governance underpin his worldview—and how does the story rebut (or fail to rebut) them?
 
-The Digital Collective’s AI is “defeated” through dialogue rather than force. What claim is the story making about persuasion versus violence—and what does it assume about who (or what) can be persuaded?
+7. The Digital Collective's AI is "defeated" through dialogue rather than force. What claim is the story making about persuasion versus violence—and what does it assume about who (or what) can be persuaded?
 
-Elena’s arc moves from solitary caretaker to global leader to mentor. What does the story suggest leadership is (and is not), and how does Elena’s relationship to authority change over time?
+8. Elena's arc moves from solitary caretaker to global leader to mentor. What does the story suggest leadership is (and is not), and how does Elena's relationship to authority change over time?
 
-Rachel Chen inherits both stigma and potential. What is the story saying about moral inheritance (sins of the parent, agency of the child), and how does that complicate the guardians’ concept of trust?
+9. Rachel Chen inherits both stigma and potential. What is the story saying about moral inheritance (sins of the parent, agency of the child), and how does that complicate the guardians' concept of trust?
 
-If the story’s core conflict is “control of knowledge,” what is its core solution: distributed guardianship, institutional alliances, technological safeguards, or moral transformation—and what costs does that solution carry?
+10. If the story's core conflict is "control of knowledge," what is its core solution: distributed guardianship, institutional alliances, technological safeguards, or moral transformation—and what costs does that solution carry?
 
