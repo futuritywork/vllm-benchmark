@@ -51,6 +51,7 @@ async def stream_once(
     generated_text = ""
     tokens_generated = 0
     time_0 = now()
+    start_timestamp = datetime.now()
     time_f = None
 
     try:
@@ -75,7 +76,11 @@ async def stream_once(
 
                 # Get timing info if available
                 if hasattr(output, "finish_reason"):
-                    print(f"Finish reason: {output.finish_reason}")
+                    end_timestamp = datetime.now()
+                    time_taken = (end_timestamp - start_timestamp).total_seconds()
+                    start_str = start_timestamp.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                    end_str = end_timestamp.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                    print(f"Finish reason: {output.finish_reason}\tStart time: {start_str}\tEnd time: {end_str}\tTime taken: {time_taken:.3f} seconds")
 
         # Record end time
         time_f = now()
