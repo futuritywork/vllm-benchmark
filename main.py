@@ -50,6 +50,7 @@ from config import parse_args
 from engine_manager import create_engine, create_sampling_params
 from benchmark import run_level, find_ceiling
 from prompt_selector import get_prompt_path
+from random_prompt_generator import generate_random_prompt, prompt_for_token_count
 
 
 async def main():
@@ -65,26 +66,38 @@ async def main():
     
     config = parse_args()
 
-    # 1) Select prompt file (interactive if not provided)
-    prompt_path = get_prompt_path(config.prompt)
-    print(f"📄 Loading prompt from: {prompt_path}")
-    
-    # 1) Build ~5k-token prompt
+    # 1) Load tokenizer first (needed for both modes)
     tokenizer_id = config.tokenizer or config.model
-
-    with open(prompt_path, "r") as f:
-        prompt = f.read()
-
     tokenizer = AutoTokenizer.from_pretrained(
         tokenizer_id,
         trust_remote_code=config.trust_remote_code,
         use_fast=True,
     )
-    ids = tokenizer.encode(prompt, add_special_tokens=False)
-    prompt_tokens = len(ids)
-    print(
-        f"[prompt] target={config.target_input_tokens} measured={prompt_tokens} chars={len(prompt)}"
-    )
+
+    # 2) Get or generate prompt based on mode
+    if config.random_tokens:
+        # Random token mode: prompt for token count and generate random prompt
+        target_tokens = prompt_for_token_count()
+        print(f"\n🎲 Generating random prompt with ~{target_tokens:,} tokens...")
+        prompt, prompt_tokens = generate_random_prompt(target_tokens, tokenizer)
+        print(
+            f"[random prompt] target={target_tokens:,} measured={prompt_tokens:,} chars={len(prompt):,}"
+        )
+        error_pct = abs(prompt_tokens - target_tokens) / target_tokens * 100
+        print(f"[random prompt] error={error_pct:.2f}%")
+    else:
+        # File-based mode: select prompt file (interactive if not provided)
+        prompt_path = get_prompt_path(config.prompt)
+        print(f"📄 Loading prompt from: {prompt_path}")
+        
+        with open(prompt_path, "r") as f:
+            prompt = f.read()
+
+        ids = tokenizer.encode(prompt, add_special_tokens=False)
+        prompt_tokens = len(ids)
+        print(
+            f"[prompt] target={config.target_input_tokens} measured={prompt_tokens} chars={len(prompt)}"
+        )
 
     # 2) Spin up AsyncLLMEngine
     engine = create_engine(config)

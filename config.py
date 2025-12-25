@@ -24,6 +24,7 @@ class BenchmarkConfig:
     log_output: bool
     log_file: str
     prompt: str | None
+    random_tokens: bool
 
     # Engine args
     model: str
@@ -66,6 +67,11 @@ def parse_args() -> BenchmarkConfig:
         "--prompt",
         default=None,
         help="Path to prompt file (if not provided, will prompt interactively from prompts/ folder)",
+    )
+    p.add_argument(
+        "--random-tokens",
+        action="store_true",
+        help="Enable random token mode: generate prompts with random English words instead of using a prompt file",
     )
 
     # Engine args (common subset; mirrors vLLM CLI flags)
@@ -124,6 +130,7 @@ def parse_args() -> BenchmarkConfig:
         log_output=args.log_output,
         log_file=args.log_file,
         prompt=args.prompt,
+        random_tokens=args.random_tokens,
         model=args.model,
         dtype=args.dtype,
         tensor_parallel_size=args.tensor_parallel_size,
