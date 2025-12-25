@@ -15,6 +15,8 @@ from typing import List, Optional
 from vllm.engine.async_llm_engine import AsyncLLMEngine
 from vllm import SamplingParams
 
+from random_prompt_generator import generate_random_prompt
+
 MIN_TPS = 25
 
 
@@ -34,9 +36,10 @@ class StreamResult:
 
 async def stream_once(
     engine: AsyncLLMEngine,
-    prompt: str,
     sampling: SamplingParams,
     tokenizer,
+    prompt: Optional[str] = None,
+    random_token_count: Optional[int] = None,
     log_output: bool = False,
     log_file: str = "llm_outputs.log",
     min_tps: float = MIN_TPS,
@@ -44,7 +47,30 @@ async def stream_once(
     """
     Start one streamed generation; capture TTFT from the first yielded chunk.
     Keep it alive for `hold_seconds`, then abort to free scheduler/compute.
+    
+    Args:
+        engine: The vLLM async engine
+        sampling: Sampling parameters
+        tokenizer: HuggingFace tokenizer
+        prompt: Static prompt string (mutually exclusive with random_token_count)
+        random_token_count: If set, generate a new random prompt with this many tokens
+        log_output: Whether to log outputs
+        log_file: File to log outputs to
+        min_tps: Minimum tokens per second threshold
     """
+    # Validate mutually exclusive args
+    if prompt is None and random_token_count is None:
+        raise ValueError("Must provide either prompt or random_token_count")
+    if prompt is not None and random_token_count is not None:
+        raise ValueError("prompt and random_token_count are mutually exclusive")
+    
+    # Generate random prompt if in random mode
+    if random_token_count is not None:
+        prompt, _ = generate_random_prompt(random_token_count, tokenizer)
+    
+    # At this point prompt is guaranteed to be a string
+    assert prompt is not None
+    
     rid = str(uuid.uuid4())
     ok = False
     error = None
@@ -173,20 +199,33 @@ class LevelResult:
 
 async def run_level(
     engine: AsyncLLMEngine,
-    prompt: str,
     sampling: SamplingParams,
     concurrency: int,
     tokenizer,
+    prompt: Optional[str] = None,
+    random_token_count: Optional[int] = None,
     log_output: bool = False,
     log_file: str = "llm_outputs.log",
     min_tps: float = MIN_TPS,
 ) -> LevelResult:
     """
     Fire `concurrency` requests simultaneously; aggregate success and TTFT stats.
+    
+    Args:
+        engine: The vLLM async engine
+        sampling: Sampling parameters
+        concurrency: Number of concurrent requests
+        tokenizer: HuggingFace tokenizer
+        prompt: Static prompt string (mutually exclusive with random_token_count)
+        random_token_count: If set, generate a new random prompt per request
+        log_output: Whether to log outputs
+        log_file: File to log outputs to
+        min_tps: Minimum tokens per second threshold
     """
     start_time = datetime.now()
     start_timestamp = start_time.strftime("%Y-%m-%d %H:%M:%S")
-    print(f"🔥 Firing {concurrency} concurrent requests...")
+    mode_str = f"random {random_token_count:,} tokens each" if random_token_count else "static prompt"
+    print(f"🔥 Firing {concurrency} concurrent requests ({mode_str})...")
     print(f"⏰ Iteration started at: {start_timestamp}")
     
     iteration_start = now()
@@ -194,12 +233,13 @@ async def run_level(
         asyncio.create_task(
             stream_once(
                 engine,
-                prompt,
                 sampling,
                 tokenizer,
-                log_output,
-                log_file,
-                min_tps,
+                prompt=prompt,
+                random_token_count=random_token_count,
+                log_output=log_output,
+                log_file=log_file,
+                min_tps=min_tps,
             )
         )
         for _ in range(concurrency)
@@ -273,18 +313,31 @@ class CeilingResult:
 
 async def find_ceiling(
     engine: AsyncLLMEngine,
-    prompt: str,
     sampling: SamplingParams,
     start_conc: int,
     max_conc_cap: int,
     sla_ok_rate: float,
     tokenizer,
+    prompt: Optional[str] = None,
+    random_token_count: Optional[int] = None,
     log_output: bool = False,
     log_file: str = "llm_outputs.log",
 ) -> CeilingResult:
     """
     Exponential ramp to first failure, then binary-search to find the max concurrency
     where ok_rate ≥ sla_ok_rate.
+    
+    Args:
+        engine: The vLLM async engine
+        sampling: Sampling parameters
+        start_conc: Starting concurrency level
+        max_conc_cap: Maximum concurrency to test
+        sla_ok_rate: Required success rate threshold
+        tokenizer: HuggingFace tokenizer
+        prompt: Static prompt string (mutually exclusive with random_token_count)
+        random_token_count: If set, generate a new random prompt per request
+        log_output: Whether to log outputs
+        log_file: File to log outputs to
     """
     history: List[LevelResult] = []
     conc = max(1, start_conc)
@@ -297,12 +350,13 @@ async def find_ceiling(
         print(f"\n📊 Testing concurrency level: {conc}")
         res = await run_level(
             engine,
-            prompt,
             sampling,
             conc,
             tokenizer,
-            log_output,
-            log_file,
+            prompt=prompt,
+            random_token_count=random_token_count,
+            log_output=log_output,
+            log_file=log_file,
             min_tps=MIN_TPS,
         )
         history.append(res)
@@ -338,12 +392,13 @@ async def find_ceiling(
         print(f"\n📊 Testing concurrency level: {mid} (range: {lo}-{hi})")
         res = await run_level(
             engine,
-            prompt,
             sampling,
             mid,
             tokenizer,
-            log_output,
-            log_file,
+            prompt=prompt,
+            random_token_count=random_token_count,
+            log_output=log_output,
+            log_file=log_file,
         )
         history.append(res)
         print(f"[search] {res}")

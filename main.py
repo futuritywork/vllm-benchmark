@@ -50,7 +50,7 @@ from config import parse_args
 from engine_manager import create_engine, create_sampling_params
 from benchmark import run_level, find_ceiling
 from prompt_selector import get_prompt_path
-from random_prompt_generator import generate_random_prompt, prompt_for_token_count
+from random_prompt_generator import prompt_for_token_count
 
 
 async def main():
@@ -75,16 +75,15 @@ async def main():
     )
 
     # 2) Get or generate prompt based on mode
+    prompt: str | None = None
+    random_token_count: int | None = None
+    
     if config.random_tokens:
-        # Random token mode: prompt for token count and generate random prompt
-        target_tokens = prompt_for_token_count()
-        print(f"\n🎲 Generating random prompt with ~{target_tokens:,} tokens...")
-        prompt, prompt_tokens = generate_random_prompt(target_tokens, tokenizer)
-        print(
-            f"[random prompt] target={target_tokens:,} measured={prompt_tokens:,} chars={len(prompt):,}"
-        )
-        error_pct = abs(prompt_tokens - target_tokens) / target_tokens * 100
-        print(f"[random prompt] error={error_pct:.2f}%")
+        # Random token mode: prompt for token count, generate new prompt per request
+        random_token_count = prompt_for_token_count()
+        prompt_tokens = random_token_count  # Target tokens (actual varies per request)
+        print(f"\n🎲 Random token mode: {random_token_count:,} tokens per request")
+        print("   (New random prompt generated for each request)")
     else:
         # File-based mode: select prompt file (interactive if not provided)
         prompt_path = get_prompt_path(config.prompt)
@@ -99,33 +98,35 @@ async def main():
             f"[prompt] target={config.target_input_tokens} measured={prompt_tokens} chars={len(prompt)}"
         )
 
-    # 2) Spin up AsyncLLMEngine
+    # 3) Spin up AsyncLLMEngine
     engine = create_engine(config)
 
-    # 3) Sampling params: tiny decode to keep streams alive
+    # 4) Sampling params: tiny decode to keep streams alive
     sampling = create_sampling_params(config)
 
-    # 4) Warm-up (helps avoid first-iteration compilation/graph-capture skew)
+    # 5) Warm-up (helps avoid first-iteration compilation/graph-capture skew)
     warm = await run_level(
         engine,
-        prompt,
         sampling,
         concurrency=1,
         tokenizer=tokenizer,
+        prompt=prompt,
+        random_token_count=random_token_count,
         log_output=config.log_output,
         log_file=config.log_file,
     )
     print(f"[warmup] {warm}")
 
-    # 5) Ramp + binary search to find ceiling
+    # 6) Ramp + binary search to find ceiling
     result = await find_ceiling(
         engine=engine,
-        prompt=prompt,
         sampling=sampling,
         start_conc=config.start_concurrency,
         max_conc_cap=config.max_concurrency_cap,
         sla_ok_rate=config.sla_ok_rate,
         tokenizer=tokenizer,
+        prompt=prompt,
+        random_token_count=random_token_count,
         log_output=config.log_output,
         log_file=config.log_file,
     )
